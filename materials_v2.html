@@ -880,7 +880,23 @@ input::placeholder { color: var(--text3); }
 
 .item-body { flex: 1; min-width: 0; }
 
+.item-name-row { display: flex; align-items: center; gap: 6px; }
+
 .item-name { font-size: 14px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: all var(--transition); }
+
+.craft-btn {
+  flex-shrink: 0;
+  width: 20px; height: 20px;
+  border-radius: 6px; border: none;
+  background: rgba(255,149,0,0.12);
+  color: #FF9500;
+  font-size: 11px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition);
+  font-family: 'DM Sans', sans-serif;
+  padding: 0;
+}
+.craft-btn:hover { background: rgba(255,149,0,0.25); transform: scale(1.15) rotate(8deg); }
 
 .item-meta { display: flex; align-items: center; gap: 6px; margin-top: 3px; flex-wrap: wrap; }
 
@@ -1527,6 +1543,14 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
   </div>
 </div>
 
+<!-- CRAFTING RECIPE MODAL -->
+<div class="bg-modal-backdrop" id="craftModal">
+  <div class="bg-modal" style="max-width:420px;">
+    <h3 id="craftModalTitle">Recipe <button class="bg-modal-close" onclick="closeCraftModal()">✕</button></h3>
+    <div id="craftModalBody"></div>
+  </div>
+</div>
+
 <!-- IMPORT MODAL -->
 <div class="bg-modal-backdrop" id="importModal">
   <div class="bg-modal" style="max-width:480px;">
@@ -2074,6 +2098,329 @@ function setFilter(f) {
   renderItems();
 }
 
+/* ===== CRAFTING RECIPES DATABASE ===== */
+// Format: itemName -> { yields: N, ingredients: [{name, amount}] }
+// Amounts are per one craft (yields N items)
+const RECIPES = {
+  // CONCRETE
+  'white concrete':    { yields:8, ingredients:[{name:'White Dye',amount:1},{name:'Sand',amount:4},{name:'Gravel',amount:4}] },
+  'orange concrete':   { yields:8, ingredients:[{name:'Orange Dye',amount:1},{name:'Sand',amount:4},{name:'Gravel',amount:4}] },
+  'magenta concrete':  { yields:8, ingredients:[{name:'Magenta Dye',amount:1},{name:'Sand',amount:4},{name:'Gravel',amount:4}] },
+  'light blue concrete':{ yields:8, ingredients:[{name:'Light Blue Dye',amount:1},{name:'Sand',amount:4},{name:'Gravel',amount:4}] },
+  'yellow concrete':   { yields:8, ingredients:[{name:'Yellow Dye',amount:1},{name:'Sand',amount:4},{name:'Gravel',amount:4}] },
+  'lime concrete':     { yields:8, ingredients:[{name:'Lime Dye',amount:1},{name:'Sand',amount:4},{name:'Gravel',amount:4}] },
+  'pink concrete':     { yields:8, ingredients:[{name:'Pink Dye',amount:1},{name:'Sand',amount:4},{name:'Gravel',amount:4}] },
+  'gray concrete':     { yields:8, ingredients:[{name:'Gray Dye',amount:1},{name:'Sand',amount:4},{name:'Gravel',amount:4}] },
+  'grey concrete':     { yields:8, ingredients:[{name:'Gray Dye',amount:1},{name:'Sand',amount:4},{name:'Gravel',amount:4}] },
+  'light gray concrete':{ yields:8, ingredients:[{name:'Light Gray Dye',amount:1},{name:'Sand',amount:4},{name:'Gravel',amount:4}] },
+  'cyan concrete':     { yields:8, ingredients:[{name:'Cyan Dye',amount:1},{name:'Sand',amount:4},{name:'Gravel',amount:4}] },
+  'purple concrete':   { yields:8, ingredients:[{name:'Purple Dye',amount:1},{name:'Sand',amount:4},{name:'Gravel',amount:4}] },
+  'blue concrete':     { yields:8, ingredients:[{name:'Blue Dye',amount:1},{name:'Sand',amount:4},{name:'Gravel',amount:4}] },
+  'brown concrete':    { yields:8, ingredients:[{name:'Brown Dye',amount:1},{name:'Sand',amount:4},{name:'Gravel',amount:4}] },
+  'green concrete':    { yields:8, ingredients:[{name:'Green Dye',amount:1},{name:'Sand',amount:4},{name:'Gravel',amount:4}] },
+  'red concrete':      { yields:8, ingredients:[{name:'Red Dye',amount:1},{name:'Sand',amount:4},{name:'Gravel',amount:4}] },
+  'black concrete':    { yields:8, ingredients:[{name:'Black Dye',amount:1},{name:'Sand',amount:4},{name:'Gravel',amount:4}] },
+  // CONCRETE POWDER
+  'white concrete powder':  { yields:8, ingredients:[{name:'White Dye',amount:1},{name:'Sand',amount:4},{name:'Gravel',amount:4}] },
+  'gray concrete powder':   { yields:8, ingredients:[{name:'Gray Dye',amount:1},{name:'Sand',amount:4},{name:'Gravel',amount:4}] },
+  'grey concrete powder':   { yields:8, ingredients:[{name:'Gray Dye',amount:1},{name:'Sand',amount:4},{name:'Gravel',amount:4}] },
+  'black concrete powder':  { yields:8, ingredients:[{name:'Black Dye',amount:1},{name:'Sand',amount:4},{name:'Gravel',amount:4}] },
+  'red concrete powder':    { yields:8, ingredients:[{name:'Red Dye',amount:1},{name:'Sand',amount:4},{name:'Gravel',amount:4}] },
+  'blue concrete powder':   { yields:8, ingredients:[{name:'Blue Dye',amount:1},{name:'Sand',amount:4},{name:'Gravel',amount:4}] },
+  // GLASS
+  'glass':             { yields:1, ingredients:[{name:'Sand',amount:1}], smelted:true },
+  'glass pane':        { yields:16, ingredients:[{name:'Glass',amount:6}] },
+  'tinted glass':      { yields:2, ingredients:[{name:'Amethyst Shard',amount:4},{name:'Glass',amount:1}] },
+  'black stained glass':{ yields:8, ingredients:[{name:'Black Dye',amount:1},{name:'Glass',amount:8}] },
+  'white stained glass':{ yields:8, ingredients:[{name:'White Dye',amount:1},{name:'Glass',amount:8}] },
+  'gray stained glass': { yields:8, ingredients:[{name:'Gray Dye',amount:1},{name:'Glass',amount:8}] },
+  'grey stained glass': { yields:8, ingredients:[{name:'Gray Dye',amount:1},{name:'Glass',amount:8}] },
+  'red stained glass':  { yields:8, ingredients:[{name:'Red Dye',amount:1},{name:'Glass',amount:8}] },
+  'blue stained glass': { yields:8, ingredients:[{name:'Blue Dye',amount:1},{name:'Glass',amount:8}] },
+  'green stained glass':{ yields:8, ingredients:[{name:'Green Dye',amount:1},{name:'Glass',amount:8}] },
+  'cyan stained glass': { yields:8, ingredients:[{name:'Cyan Dye',amount:1},{name:'Glass',amount:8}] },
+  'purple stained glass':{ yields:8, ingredients:[{name:'Purple Dye',amount:1},{name:'Glass',amount:8}] },
+  'yellow stained glass':{ yields:8, ingredients:[{name:'Yellow Dye',amount:1},{name:'Glass',amount:8}] },
+  'lime stained glass': { yields:8, ingredients:[{name:'Lime Dye',amount:1},{name:'Glass',amount:8}] },
+  'pink stained glass': { yields:8, ingredients:[{name:'Pink Dye',amount:1},{name:'Glass',amount:8}] },
+  'orange stained glass':{ yields:8, ingredients:[{name:'Orange Dye',amount:1},{name:'Glass',amount:8}] },
+  'light blue stained glass':{ yields:8, ingredients:[{name:'Light Blue Dye',amount:1},{name:'Glass',amount:8}] },
+  'magenta stained glass':{ yields:8, ingredients:[{name:'Magenta Dye',amount:1},{name:'Glass',amount:8}] },
+  'brown stained glass':{ yields:8, ingredients:[{name:'Brown Dye',amount:1},{name:'Glass',amount:8}] },
+  'light gray stained glass':{ yields:8, ingredients:[{name:'Light Gray Dye',amount:1},{name:'Glass',amount:8}] },
+  // STONE & DEEPSLATE
+  'stone':             { yields:1, ingredients:[{name:'Cobblestone',amount:1}], smelted:true },
+  'smooth stone':      { yields:1, ingredients:[{name:'Stone',amount:1}], smelted:true },
+  'smooth stone slab': { yields:6, ingredients:[{name:'Smooth Stone',amount:3}] },
+  'stone bricks':      { yields:4, ingredients:[{name:'Stone',amount:4}] },
+  'stone brick slab':  { yields:6, ingredients:[{name:'Stone Bricks',amount:3}] },
+  'stone brick stairs':{ yields:4, ingredients:[{name:'Stone Bricks',amount:6}] },
+  'cobblestone slab':  { yields:6, ingredients:[{name:'Cobblestone',amount:3}] },
+  'cobblestone stairs':{ yields:4, ingredients:[{name:'Cobblestone',amount:6}] },
+  'cobblestone wall':  { yields:6, ingredients:[{name:'Cobblestone',amount:6}] },
+  'mossy cobblestone': { yields:1, ingredients:[{name:'Cobblestone',amount:1},{name:'Vine',amount:1}] },
+  'mossy stone bricks':{ yields:1, ingredients:[{name:'Stone Bricks',amount:1},{name:'Vine',amount:1}] },
+  'chiseled stone bricks':{ yields:1, ingredients:[{name:'Stone Brick Slab',amount:2}] },
+  'polished granite':  { yields:4, ingredients:[{name:'Granite',amount:4}] },
+  'polished diorite':  { yields:4, ingredients:[{name:'Diorite',amount:4}] },
+  'polished andesite': { yields:4, ingredients:[{name:'Andesite',amount:4}] },
+  'polished deepslate':{ yields:4, ingredients:[{name:'Cobbled Deepslate',amount:4}] },
+  'deepslate bricks':  { yields:4, ingredients:[{name:'Polished Deepslate',amount:4}] },
+  'deepslate tiles':   { yields:4, ingredients:[{name:'Deepslate Bricks',amount:4}] },
+  'cobbled deepslate slab':{ yields:6, ingredients:[{name:'Cobbled Deepslate',amount:3}] },
+  // WOOD - OAK
+  'oak planks':        { yields:4, ingredients:[{name:'Oak Log',amount:1}] },
+  'oak slab':          { yields:6, ingredients:[{name:'Oak Planks',amount:3}] },
+  'oak stairs':        { yields:4, ingredients:[{name:'Oak Planks',amount:6}] },
+  'oak fence':         { yields:3, ingredients:[{name:'Oak Planks',amount:4},{name:'Stick',amount:2}] },
+  'oak fence gate':    { yields:1, ingredients:[{name:'Oak Planks',amount:2},{name:'Stick',amount:4}] },
+  'oak door':          { yields:3, ingredients:[{name:'Oak Planks',amount:6}] },
+  'oak trapdoor':      { yields:2, ingredients:[{name:'Oak Planks',amount:6}] },
+  'oak log':           { yields:1, ingredients:[{name:'Stripped Oak Log',amount:1}] },
+  // WOOD - SPRUCE
+  'spruce planks':     { yields:4, ingredients:[{name:'Spruce Log',amount:1}] },
+  'spruce slab':       { yields:6, ingredients:[{name:'Spruce Planks',amount:3}] },
+  'spruce stairs':     { yields:4, ingredients:[{name:'Spruce Planks',amount:6}] },
+  'spruce fence':      { yields:3, ingredients:[{name:'Spruce Planks',amount:4},{name:'Stick',amount:2}] },
+  'spruce door':       { yields:3, ingredients:[{name:'Spruce Planks',amount:6}] },
+  'spruce trapdoor':   { yields:2, ingredients:[{name:'Spruce Planks',amount:6}] },
+  // WOOD - BIRCH
+  'birch planks':      { yields:4, ingredients:[{name:'Birch Log',amount:1}] },
+  'birch slab':        { yields:6, ingredients:[{name:'Birch Planks',amount:3}] },
+  'birch stairs':      { yields:4, ingredients:[{name:'Birch Planks',amount:6}] },
+  'birch door':        { yields:3, ingredients:[{name:'Birch Planks',amount:6}] },
+  'birch trapdoor':    { yields:2, ingredients:[{name:'Birch Planks',amount:6}] },
+  // WOOD - DARK OAK
+  'dark oak planks':   { yields:4, ingredients:[{name:'Dark Oak Log',amount:1}] },
+  'dark oak slab':     { yields:6, ingredients:[{name:'Dark Oak Planks',amount:3}] },
+  'dark oak stairs':   { yields:4, ingredients:[{name:'Dark Oak Planks',amount:6}] },
+  'dark oak door':     { yields:3, ingredients:[{name:'Dark Oak Planks',amount:6}] },
+  'dark oak trapdoor': { yields:2, ingredients:[{name:'Dark Oak Planks',amount:6}] },
+  // WOOD - JUNGLE / ACACIA / MANGROVE / CHERRY
+  'jungle planks':     { yields:4, ingredients:[{name:'Jungle Log',amount:1}] },
+  'acacia planks':     { yields:4, ingredients:[{name:'Acacia Log',amount:1}] },
+  'mangrove planks':   { yields:4, ingredients:[{name:'Mangrove Log',amount:1}] },
+  'cherry planks':     { yields:4, ingredients:[{name:'Cherry Log',amount:1}] },
+  'crimson planks':    { yields:4, ingredients:[{name:'Crimson Stem',amount:1}] },
+  'warped planks':     { yields:4, ingredients:[{name:'Warped Stem',amount:1}] },
+  // STICKS & BASIC
+  'stick':             { yields:4, ingredients:[{name:'Any Planks',amount:2}] },
+  'chest':             { yields:1, ingredients:[{name:'Any Planks',amount:8}] },
+  'trapped chest':     { yields:1, ingredients:[{name:'Chest',amount:1},{name:'Tripwire Hook',amount:1}] },
+  'barrel':            { yields:1, ingredients:[{name:'Any Planks',amount:6},{name:'Any Slab',amount:2}] },
+  'crafting table':    { yields:1, ingredients:[{name:'Any Planks',amount:4}] },
+  'bookshelf':         { yields:1, ingredients:[{name:'Any Planks',amount:6},{name:'Book',amount:3}] },
+  'book':              { yields:1, ingredients:[{name:'Paper',amount:3},{name:'Leather',amount:1}] },
+  'paper':             { yields:3, ingredients:[{name:'Sugar Cane',amount:3}] },
+  // REDSTONE
+  'piston':            { yields:1, ingredients:[{name:'Any Planks',amount:3},{name:'Cobblestone',amount:4},{name:'Iron Ingot',amount:1},{name:'Redstone Dust',amount:1}] },
+  'sticky piston':     { yields:1, ingredients:[{name:'Piston',amount:1},{name:'Slimeball',amount:1}] },
+  'observer':          { yields:1, ingredients:[{name:'Cobblestone',amount:6},{name:'Redstone Dust',amount:2},{name:'Nether Quartz',amount:1}] },
+  'dispenser':         { yields:1, ingredients:[{name:'Cobblestone',amount:7},{name:'Bow',amount:1},{name:'Redstone Dust',amount:1}] },
+  'dropper':           { yields:1, ingredients:[{name:'Cobblestone',amount:7},{name:'Redstone Dust',amount:1}] },
+  'hopper':            { yields:1, ingredients:[{name:'Iron Ingot',amount:5},{name:'Chest',amount:1}] },
+  'comparator':        { yields:1, ingredients:[{name:'Stone',amount:3},{name:'Redstone Torch',amount:3},{name:'Nether Quartz',amount:1}] },
+  'repeater':          { yields:1, ingredients:[{name:'Stone',amount:3},{name:'Redstone Torch',amount:2},{name:'Redstone Dust',amount:1}] },
+  'redstone torch':    { yields:1, ingredients:[{name:'Redstone Dust',amount:1},{name:'Stick',amount:1}] },
+  'redstone lamp':     { yields:1, ingredients:[{name:'Redstone Dust',amount:4},{name:'Glowstone',amount:1}] },
+  'redstone block':    { yields:1, ingredients:[{name:'Redstone Dust',amount:9}] },
+  'note block':        { yields:1, ingredients:[{name:'Any Planks',amount:8},{name:'Redstone Dust',amount:1}] },
+  'lever':             { yields:1, ingredients:[{name:'Stick',amount:1},{name:'Cobblestone',amount:1}] },
+  'detector rail':     { yields:6, ingredients:[{name:'Iron Ingot',amount:6},{name:'Stone Pressure Plate',amount:1},{name:'Redstone Dust',amount:1}] },
+  'powered rail':      { yields:6, ingredients:[{name:'Gold Ingot',amount:6},{name:'Stick',amount:1},{name:'Redstone Dust',amount:1}] },
+  'rail':              { yields:16, ingredients:[{name:'Iron Ingot',amount:6},{name:'Stick',amount:1}] },
+  'activator rail':    { yields:6, ingredients:[{name:'Iron Ingot',amount:6},{name:'Stick',amount:2},{name:'Redstone Torch',amount:1}] },
+  'tripwire hook':     { yields:2, ingredients:[{name:'Iron Ingot',amount:1},{name:'Stick',amount:1},{name:'Any Planks',amount:1}] },
+  'target':            { yields:1, ingredients:[{name:'Hay Bale',amount:1},{name:'Redstone Dust',amount:4}] },
+  'daylight detector': { yields:1, ingredients:[{name:'Glass',amount:3},{name:'Nether Quartz',amount:3},{name:'Any Slab',amount:3}] },
+  // STORAGE
+  'shulker box':       { yields:1, ingredients:[{name:'Chest',amount:1},{name:'Shulker Shell',amount:2}] },
+  'ender chest':       { yields:1, ingredients:[{name:'Obsidian',amount:8},{name:'Eye of Ender',amount:1}] },
+  // NETHER / END
+  'nether brick':      { yields:1, ingredients:[{name:'Netherrack',amount:1}], smelted:true },
+  'nether bricks':     { yields:1, ingredients:[{name:'Nether Brick',amount:4}] },
+  'nether brick fence':{ yields:6, ingredients:[{name:'Nether Bricks',amount:4},{name:'Nether Brick',amount:2}] },
+  'nether brick slab': { yields:6, ingredients:[{name:'Nether Bricks',amount:3}] },
+  'nether brick stairs':{ yields:4, ingredients:[{name:'Nether Bricks',amount:6}] },
+  'red nether bricks': { yields:1, ingredients:[{name:'Nether Brick',amount:2},{name:'Nether Wart',amount:2}] },
+  'magma block':       { yields:1, ingredients:[{name:'Magma Cream',amount:4}] },
+  'magma cream':       { yields:1, ingredients:[{name:'Blaze Powder',amount:1},{name:'Slimeball',amount:1}] },
+  'blaze powder':      { yields:2, ingredients:[{name:'Blaze Rod',amount:1}] },
+  'eye of ender':      { yields:1, ingredients:[{name:'Ender Pearl',amount:1},{name:'Blaze Powder',amount:1}] },
+  'end stone bricks':  { yields:4, ingredients:[{name:'End Stone',amount:4}] },
+  'purpur block':      { yields:4, ingredients:[{name:'Popped Chorus Fruit',amount:4}] },
+  'purpur pillar':     { yields:2, ingredients:[{name:'Purpur Slab',amount:2}] },
+  'purpur slab':       { yields:6, ingredients:[{name:'Purpur Block',amount:3}] },
+  // SMELTING COMMON
+  'iron ingot':        { yields:1, ingredients:[{name:'Raw Iron',amount:1}], smelted:true },
+  'gold ingot':        { yields:1, ingredients:[{name:'Raw Gold',amount:1}], smelted:true },
+  'copper ingot':      { yields:1, ingredients:[{name:'Raw Copper',amount:1}], smelted:true },
+  'brick':             { yields:1, ingredients:[{name:'Clay Ball',amount:1}], smelted:true },
+  'bricks':            { yields:1, ingredients:[{name:'Brick',amount:4}] },
+  'brick slab':        { yields:6, ingredients:[{name:'Bricks',amount:3}] },
+  'brick stairs':      { yields:4, ingredients:[{name:'Bricks',amount:6}] },
+  'terracotta':        { yields:1, ingredients:[{name:'Clay Block',amount:1}], smelted:true },
+  'white terracotta':  { yields:8, ingredients:[{name:'White Dye',amount:1},{name:'Terracotta',amount:8}] },
+  'orange terracotta': { yields:8, ingredients:[{name:'Orange Dye',amount:1},{name:'Terracotta',amount:8}] },
+  'gray terracotta':   { yields:8, ingredients:[{name:'Gray Dye',amount:1},{name:'Terracotta',amount:8}] },
+  'grey terracotta':   { yields:8, ingredients:[{name:'Gray Dye',amount:1},{name:'Terracotta',amount:8}] },
+  'black terracotta':  { yields:8, ingredients:[{name:'Black Dye',amount:1},{name:'Terracotta',amount:8}] },
+  'red terracotta':    { yields:8, ingredients:[{name:'Red Dye',amount:1},{name:'Terracotta',amount:8}] },
+  'blue terracotta':   { yields:8, ingredients:[{name:'Blue Dye',amount:1},{name:'Terracotta',amount:8}] },
+  'green terracotta':  { yields:8, ingredients:[{name:'Green Dye',amount:1},{name:'Terracotta',amount:8}] },
+  'yellow terracotta': { yields:8, ingredients:[{name:'Yellow Dye',amount:1},{name:'Terracotta',amount:8}] },
+  'lime terracotta':   { yields:8, ingredients:[{name:'Lime Dye',amount:1},{name:'Terracotta',amount:8}] },
+  'cyan terracotta':   { yields:8, ingredients:[{name:'Cyan Dye',amount:1},{name:'Terracotta',amount:8}] },
+  'purple terracotta': { yields:8, ingredients:[{name:'Purple Dye',amount:1},{name:'Terracotta',amount:8}] },
+  'pink terracotta':   { yields:8, ingredients:[{name:'Pink Dye',amount:1},{name:'Terracotta',amount:8}] },
+  'magenta terracotta':{ yields:8, ingredients:[{name:'Magenta Dye',amount:1},{name:'Terracotta',amount:8}] },
+  'brown terracotta':  { yields:8, ingredients:[{name:'Brown Dye',amount:1},{name:'Terracotta',amount:8}] },
+  'light blue terracotta':{ yields:8, ingredients:[{name:'Light Blue Dye',amount:1},{name:'Terracotta',amount:8}] },
+  'light gray terracotta':{ yields:8, ingredients:[{name:'Light Gray Dye',amount:1},{name:'Terracotta',amount:8}] },
+  // TOOLS
+  'iron pickaxe':      { yields:1, ingredients:[{name:'Iron Ingot',amount:3},{name:'Stick',amount:2}] },
+  'iron axe':          { yields:1, ingredients:[{name:'Iron Ingot',amount:3},{name:'Stick',amount:2}] },
+  'iron shovel':       { yields:1, ingredients:[{name:'Iron Ingot',amount:1},{name:'Stick',amount:2}] },
+  'iron sword':        { yields:1, ingredients:[{name:'Iron Ingot',amount:2},{name:'Stick',amount:1}] },
+  'iron hoe':          { yields:1, ingredients:[{name:'Iron Ingot',amount:2},{name:'Stick',amount:2}] },
+  'diamond pickaxe':   { yields:1, ingredients:[{name:'Diamond',amount:3},{name:'Stick',amount:2}] },
+  'diamond axe':       { yields:1, ingredients:[{name:'Diamond',amount:3},{name:'Stick',amount:2}] },
+  'diamond sword':     { yields:1, ingredients:[{name:'Diamond',amount:2},{name:'Stick',amount:1}] },
+  'diamond shovel':    { yields:1, ingredients:[{name:'Diamond',amount:1},{name:'Stick',amount:2}] },
+  'bow':               { yields:1, ingredients:[{name:'Stick',amount:3},{name:'String',amount:3}] },
+  'crossbow':          { yields:1, ingredients:[{name:'Stick',amount:3},{name:'String',amount:2},{name:'Iron Ingot',amount:1},{name:'Tripwire Hook',amount:1}] },
+  'fishing rod':       { yields:1, ingredients:[{name:'Stick',amount:3},{name:'String',amount:2}] },
+  'shears':            { yields:1, ingredients:[{name:'Iron Ingot',amount:2}] },
+  'flint and steel':   { yields:1, ingredients:[{name:'Iron Ingot',amount:1},{name:'Flint',amount:1}] },
+  'shield':            { yields:1, ingredients:[{name:'Any Planks',amount:6},{name:'Iron Ingot',amount:1}] },
+  // ARMOR
+  'iron helmet':       { yields:1, ingredients:[{name:'Iron Ingot',amount:5}] },
+  'iron chestplate':   { yields:1, ingredients:[{name:'Iron Ingot',amount:8}] },
+  'iron leggings':     { yields:1, ingredients:[{name:'Iron Ingot',amount:7}] },
+  'iron boots':        { yields:1, ingredients:[{name:'Iron Ingot',amount:4}] },
+  'diamond helmet':    { yields:1, ingredients:[{name:'Diamond',amount:5}] },
+  'diamond chestplate':{ yields:1, ingredients:[{name:'Diamond',amount:8}] },
+  'diamond leggings':  { yields:1, ingredients:[{name:'Diamond',amount:7}] },
+  'diamond boots':     { yields:1, ingredients:[{name:'Diamond',amount:4}] },
+  // UTILITY BLOCKS
+  'furnace':           { yields:1, ingredients:[{name:'Cobblestone',amount:8}] },
+  'blast furnace':     { yields:1, ingredients:[{name:'Iron Ingot',amount:5},{name:'Furnace',amount:1},{name:'Smooth Stone',amount:3}] },
+  'smoker':            { yields:1, ingredients:[{name:'Any Log',amount:4},{name:'Furnace',amount:1}] },
+  'anvil':             { yields:1, ingredients:[{name:'Iron Block',amount:3},{name:'Iron Ingot',amount:4}] },
+  'iron block':        { yields:1, ingredients:[{name:'Iron Ingot',amount:9}] },
+  'gold block':        { yields:1, ingredients:[{name:'Gold Ingot',amount:9}] },
+  'diamond block':     { yields:1, ingredients:[{name:'Diamond',amount:9}] },
+  'emerald block':     { yields:1, ingredients:[{name:'Emerald',amount:9}] },
+  'coal block':        { yields:1, ingredients:[{name:'Coal',amount:9}] },
+  'hay bale':          { yields:1, ingredients:[{name:'Wheat',amount:9}] },
+  'composter':         { yields:1, ingredients:[{name:'Any Slab',amount:7}] },
+  'cauldron':          { yields:1, ingredients:[{name:'Iron Ingot',amount:7}] },
+  'brewing stand':     { yields:1, ingredients:[{name:'Blaze Rod',amount:1},{name:'Cobblestone',amount:3}] },
+  'beacon':            { yields:1, ingredients:[{name:'Glass',amount:5},{name:'Nether Star',amount:1},{name:'Obsidian',amount:3}] },
+  'enchanting table':  { yields:1, ingredients:[{name:'Obsidian',amount:4},{name:'Diamond',amount:2},{name:'Book',amount:1}] },
+  'grindstone':        { yields:1, ingredients:[{name:'Stick',amount:2},{name:'Stone Slab',amount:1},{name:'Any Planks',amount:2}] },
+  'smithing table':    { yields:1, ingredients:[{name:'Iron Ingot',amount:2},{name:'Any Planks',amount:4}] },
+  'stonecutter':       { yields:1, ingredients:[{name:'Iron Ingot',amount:1},{name:'Stone',amount:3}] },
+  'loom':              { yields:1, ingredients:[{name:'String',amount:2},{name:'Any Planks',amount:2}] },
+  'cartography table': { yields:1, ingredients:[{name:'Paper',amount:2},{name:'Any Planks',amount:4}] },
+  'fletching table':   { yields:1, ingredients:[{name:'Flint',amount:2},{name:'Any Planks',amount:4}] },
+  'lectern':           { yields:1, ingredients:[{name:'Bookshelf',amount:1},{name:'Any Slab',amount:4}] },
+  'bell':              { yields:1, ingredients:[{name:'Gold Ingot',amount:5},{name:'Stick',amount:1},{name:'Any Planks',amount:2}] },
+  'lightning rod':     { yields:1, ingredients:[{name:'Copper Ingot',amount:3}] },
+  'spyglass':          { yields:1, ingredients:[{name:'Copper Ingot',amount:2},{name:'Amethyst Shard',amount:1}] },
+  // SEA / PRISMARINE
+  'sea lantern':       { yields:1, ingredients:[{name:'Prismarine Shard',amount:4},{name:'Prismarine Crystals',amount:5}] },
+  'prismarine':        { yields:1, ingredients:[{name:'Prismarine Shard',amount:4}] },
+  'prismarine bricks': { yields:1, ingredients:[{name:'Prismarine Shard',amount:9}] },
+  'dark prismarine':   { yields:1, ingredients:[{name:'Prismarine Shard',amount:8},{name:'Ink Sac',amount:1}] },
+  // FOOD
+  'bread':             { yields:1, ingredients:[{name:'Wheat',amount:3}] },
+  'cake':              { yields:1, ingredients:[{name:'Milk Bucket',amount:3},{name:'Sugar',amount:2},{name:'Egg',amount:1},{name:'Wheat',amount:3}] },
+  'cookie':            { yields:8, ingredients:[{name:'Wheat',amount:2},{name:'Cocoa Beans',amount:1}] },
+  'pumpkin pie':       { yields:1, ingredients:[{name:'Pumpkin',amount:1},{name:'Sugar',amount:1},{name:'Egg',amount:1}] },
+  'sugar':             { yields:1, ingredients:[{name:'Sugar Cane',amount:1}] },
+  // MISC
+  'scaffolding':       { yields:6, ingredients:[{name:'Bamboo',amount:6},{name:'String',amount:1}] },
+  'soul sand':         { yields:1, note:'Found naturally in the Nether' },
+  'dirt':              { yields:1, note:'Found naturally in the Overworld' },
+  'wheat seeds':       { yields:1, note:'Obtained by breaking grass or tilling grass blocks' },
+  'wither skeleton skull':{ yields:1, note:'Rare drop from Wither Skeletons in Nether Fortresses' },
+  'slime block':       { yields:1, ingredients:[{name:'Slimeball',amount:9}] },
+  'bone meal':         { yields:3, ingredients:[{name:'Bone',amount:1}] },
+  'glowstone':         { yields:1, ingredients:[{name:'Glowstone Dust',amount:4}] },
+  'tnt':               { yields:1, ingredients:[{name:'Sand',amount:5},{name:'Gunpowder',amount:4}] },
+  'ladder':            { yields:3, ingredients:[{name:'Stick',amount:7}] },
+  'lead':              { yields:2, ingredients:[{name:'String',amount:4},{name:'Slimeball',amount:1}] },
+  'saddle':            { yields:1, note:'Found in chests in Dungeons, Villages, Nether Fortresses, Temples' },
+  'name tag':          { yields:1, note:'Found in chests or by fishing. Cannot be crafted.' },
+  'elytra':            { yields:1, note:'Found in End Ship chests. Cannot be crafted.' },
+  'trident':           { yields:1, note:'Rare drop from Drowned. Cannot be crafted.' },
+};
+
+function getCraftingRecipe(name) {
+  return RECIPES[name.toLowerCase()] || null;
+}
+
+function openCraftModal(name, totalQty) {
+  const recipe = getCraftingRecipe(name);
+  if (!recipe) return;
+  const modal = document.getElementById('craftModal');
+  const title = document.getElementById('craftModalTitle');
+  const body = document.getElementById('craftModalBody');
+
+  title.innerHTML = `🔨 ${esc(name)} <button class="bg-modal-close" onclick="closeCraftModal()">✕</button>`;
+
+  if (recipe.note) {
+    body.innerHTML = `
+      <div style="background:rgba(255,149,0,0.1);border:1px solid rgba(255,149,0,0.2);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--text2);line-height:1.6;">
+        <div style="font-size:18px;margin-bottom:8px;">ℹ️</div>
+        ${esc(recipe.note)}
+      </div>`;
+    modal.classList.add('open');
+    return;
+  }
+
+  const crafts = Math.ceil(totalQty / recipe.yields);
+  const craftWord = recipe.smelted ? 'smelt' : 'craft';
+  const craftIcon = recipe.smelted ? '🔥' : '🪵';
+
+  let ingredientsHtml = recipe.ingredients.map(ing => {
+    const needed = ing.amount * crafts;
+    const stacks = Math.floor(needed / 64);
+    const rem = needed % 64;
+    let stackStr = '';
+    if (stacks > 0 && rem > 0) stackStr = `<span style="font-size:10px;color:var(--text3);margin-left:4px;">(${stacks}s +${rem})</span>`;
+    else if (stacks > 0) stackStr = `<span style="font-size:10px;color:var(--text3);margin-left:4px;">(${stacks} stack${stacks>1?'s':''})</span>`;
+    return `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;">
+        <span style="font-size:13px;font-weight:500;color:var(--text);">${esc(ing.name)}</span>
+        <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:var(--accent);">×${needed}${stackStr}</span>
+      </div>`;
+  }).join('');
+
+  body.innerHTML = `
+    <div style="background:rgba(10,122,255,0.08);border:1px solid rgba(10,122,255,0.15);border-radius:12px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:20px;">${craftIcon}</span>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);">Need to ${craftWord} <span style="color:var(--accent);">${crafts}×</span></div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;">Each ${craftWord} gives ${recipe.yields} — you need ${totalQty} total</div>
+      </div>
+    </div>
+    <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;">Ingredients needed</div>
+    <div style="display:flex;flex-direction:column;gap:6px;">${ingredientsHtml}</div>
+  `;
+
+  modal.classList.add('open');
+}
+
+function closeCraftModal() {
+  document.getElementById('craftModal').classList.remove('open');
+}
+
+document.getElementById('craftModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('craftModal')) closeCraftModal();
+});
+
 /* ===== CUSTOM SORT DROPDOWN ===== */
 let currentSort = 'order';
 
@@ -2179,7 +2526,10 @@ function renderItems() {
       <span class="drag-handle" title="Drag to reorder">⠿</span>
       <button class="check-circle" onclick="toggleDone(${item.id})" title="Toggle done">${item.done?'✓':''}</button>
       <div class="item-body">
-        <div class="item-name">${esc(item.name)}</div>
+        <div class="item-name-row">
+          <span class="item-name">${esc(item.name)}</span>
+          ${getCraftingRecipe(item.name) ? `<button class="craft-btn" onclick="openCraftModal('${esc(item.name)}',${qty})" title="Show crafting recipe">🔨</button>` : ''}
+        </div>
         <div class="item-meta">
           <span class="item-qty">×${esc(item.amount)}</span>
           ${shulkerHtml}
