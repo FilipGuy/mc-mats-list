@@ -2389,7 +2389,7 @@ function openCraftModal(name, totalQty) {
     const stacks = Math.floor(needed / 64);
     const rem = needed % 64;
     let stackStr = '';
-    if (stacks > 0 && rem > 0) stackStr = `<span style="font-size:10px;color:var(--text3);margin-left:4px;">(${stacks}s +${rem})</span>`;
+    if (stacks > 0 && rem > 0) stackStr = `<span style="font-size:10px;color:var(--text3);margin-left:4px;">(${stacks} stack${stacks>1?'s':''} and ${rem} item${rem>1?'s':''})</span>`;
     else if (stacks > 0) stackStr = `<span style="font-size:10px;color:var(--text3);margin-left:4px;">(${stacks} stack${stacks>1?'s':''})</span>`;
     return `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;">
