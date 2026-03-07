@@ -3593,20 +3593,32 @@ async function loadShareMembers(pid) {
     .select('user_id, role, profiles(username)')
     .eq('project_id', pid);
   el.innerHTML = '';
+  const isMyProject = !_projects.find(p => p.id === pid)?.name?.endsWith('(shared)');
   if (!data || data.length === 0) {
     el.innerHTML = '<div style="font-size:12px;color:var(--text3);">Only you have access.</div>';
     return;
   }
   data.forEach(m => {
     const row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface2);border-radius:10px;';
-    const isOwner = m.role === 'owner';
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface2);border-radius:10px;gap:8px;';
+    const isMe = m.user_id === CU.id;
+    const username = m.profiles?.username || 'unknown';
     row.innerHTML = `
-      <span style="font-size:13px;font-weight:500;color:var(--text);">@${m.profiles?.username || 'unknown'}</span>
-      <span style="font-size:11px;color:var(--text3);background:var(--surface);border-radius:6px;padding:2px 8px;">${isOwner ? 'Owner' : 'Member'}</span>
+      <span style="font-size:13px;font-weight:500;color:var(--text);">@${username}</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:11px;color:var(--text3);background:var(--surface);border-radius:6px;padding:2px 8px;">${isMe ? 'You' : 'Member'}</span>
+        ${isMyProject && !isMe ? `<button onclick="removeMember('${pid}','${m.user_id}','${username}')" style="border:none;background:rgba(255,58,48,0.1);color:var(--danger);border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;">Remove</button>` : ''}
+      </div>
     `;
     el.appendChild(row);
   });
+}
+
+async function removeMember(pid, userId, username) {
+  const { error } = await SB.from('project_members').delete().eq('project_id', pid).eq('user_id', userId);
+  if (error) { toast('Failed to remove: ' + error.message); return; }
+  toast('Removed @' + username);
+  loadShareMembers(pid);
 }
 
 async function sendInvite() {
@@ -3684,23 +3696,29 @@ async function respondInvite(inviteId, projectId, projectName, status) {
   await SB.from('invites').update({ status }).eq('id', inviteId);
 
   if (status === 'accepted') {
-    // add to project_members
-    await SB.from('project_members').insert({ project_id: projectId, user_id: CU.id, role: 'member' });
-    // load the shared project into local state
-    const { data: proj } = await SB.from('projects').select('*').eq('id', projectId).single();
+    const { error: memErr } = await SB.from('project_members').insert({ project_id: projectId, user_id: CU.id, role: 'member' });
+    if (memErr) { toast('Could not join: ' + memErr.message); closeInvitesModal(); return; }
+
+    const { data: proj } = await SB.from('projects').select('*').eq('id', projectId).maybeSingle();
     if (proj) {
-      _projects.push({ id: proj.id, name: proj.name, color: proj.color });
+      if (!_projects.find(p => p.id === proj.id)) {
+        _projects.push({ id: proj.id, name: proj.name + ' (shared)', color: proj.color });
+      }
       const { data: items } = await SB.from('items').select('*').eq('project_id', projectId).order('item_order');
       _items[projectId] = (items || []).map(i => ({ id: i.id, name: i.name, amount: i.amount, tag: i.tag, priority: i.priority, done: i.done, order: i.item_order }));
       const { data: tags } = await SB.from('tags').select('*').eq('project_id', projectId);
       _tags[projectId] = (tags || []).map(t => ({ name: t.name, color: t.color }));
+      toast('Joined "' + proj.name + '"');
+    } else {
+      _projects.push({ id: projectId, name: projectName + ' (shared)', color: 0 });
+      _items[projectId] = [];
+      _tags[projectId] = [];
+      toast('Joined — reload to see items');
     }
-    toast(`Joined project "${projectName}"`);
     renderProjects();
   } else {
     toast('Invite declined');
   }
-
   closeInvitesModal();
 }
 
