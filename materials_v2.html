@@ -2384,6 +2384,7 @@ function parseSchematicBinary(bytes, filename) {
 }
 
 
+function showImportPreview(parsed) {
   const errEl = document.getElementById('importError');
   const previewEl = document.getElementById('importPreview');
   const listEl = document.getElementById('importPreviewList');
@@ -2426,6 +2427,7 @@ function parseSchematicBinary(bytes, filename) {
 }
 
 
+function openImportModal() {
   importParsed = [];
   document.getElementById('importTextarea').value = '';
   document.getElementById('importPreview').style.display = 'none';
