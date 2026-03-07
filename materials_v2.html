@@ -508,6 +508,72 @@ input::placeholder { color: var(--text3); }
 .proj-tab-wrap:hover .proj-del-btn { opacity: 1; }
 .proj-del-btn:hover { background: rgba(255,58,48,0.2); color: var(--danger); transform: scale(1.1); opacity: 1; }
 
+.proj-rename-btn {
+  width: 20px; height: 20px;
+  border-radius: 6px; border: none;
+  background: rgba(255,255,255,0.05);
+  color: var(--text2);
+  font-size: 10px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition);
+  opacity: 0; padding: 0;
+}
+.proj-tab-wrap:hover .proj-rename-btn { opacity: 1; }
+.proj-rename-btn:hover { background: rgba(255,255,255,0.12); transform: scale(1.1); }
+
+.proj-more-btn {
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text2);
+  font-size: 13px; font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition);
+  font-family: 'DM Sans', sans-serif;
+  flex-shrink: 0;
+  display: flex; align-items: center; gap: 5px;
+}
+.proj-more-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(10,122,255,0.06); }
+
+.proj-dropdown-backdrop { display: none; position: fixed; inset: 0; z-index: 999; }
+.proj-dropdown-backdrop.open { display: block; }
+
+.proj-dropdown {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  padding: 6px;
+  min-width: 240px;
+  max-height: 360px;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  backdrop-filter: blur(20px);
+  scrollbar-width: thin;
+}
+.proj-dropdown.open { display: block; }
+
+.proj-dropdown-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.proj-dropdown-item:hover { background: var(--surface2); }
+.proj-dropdown-item.active { background: rgba(10,122,255,0.1); }
+.proj-dropdown-item.active .proj-dd-name { color: var(--accent); font-weight: 600; }
+
+.proj-dd-name { flex: 1; font-size: 13px; color: var(--text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.proj-dd-count { font-size: 11px; color: var(--text3); background: var(--surface2); border-radius: 6px; padding: 1px 6px; font-family: 'DM Mono', monospace; flex-shrink: 0; }
+.proj-dd-actions { display: flex; gap: 3px; opacity: 0; transition: opacity var(--transition); flex-shrink: 0; }
+.proj-dropdown-item:hover .proj-dd-actions { opacity: 1; }
+.proj-dd-actions button { width: 22px; height: 22px; border: none; background: var(--surface2); border-radius: 6px; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center; transition: background var(--transition); }
+
 .proj-share-btn {
   width: 20px; height: 20px;
   border-radius: 6px; border: none;
@@ -760,11 +826,12 @@ input::placeholder { color: var(--text3); }
 .add-go-btn:active { transform: scale(0.92) rotate(-3deg); }
 
 /* TAGS ROW */
-.tags-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.tags-row { display: flex; gap: 6px; flex-wrap: nowrap; margin-top: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.tags-row::-webkit-scrollbar { display: none; }
 
 .tag-chip {
-  padding: 4px 11px;
-  border-radius: 7px;
+  padding: 5px 13px;
+  border-radius: 20px;
   font-size: 11px; font-weight: 600;
   cursor: pointer;
   border: 1.5px solid transparent;
@@ -772,28 +839,24 @@ input::placeholder { color: var(--text3); }
   background: var(--surface2);
   color: var(--text2);
   user-select: none;
-  display: inline-flex; align-items: center; gap: 5px;
-}
-
-.tag-chip.selected, .tag-chip:hover { opacity: 1; }
-.tag-chip.selected { transform: scale(1.04); }
-
-.tag-del-btn {
-  width: 13px; height: 13px;
-  border-radius: 3px; border: none;
-  background: transparent;
-  color: currentColor;
-  font-size: 9px; font-weight: 700;
-  cursor: pointer; padding: 0;
-  display: flex; align-items: center; justify-content: center;
-  opacity: 0.4;
-  transition: all var(--transition);
-  font-family: 'DM Sans', sans-serif;
+  white-space: nowrap;
   flex-shrink: 0;
-  line-height: 1;
 }
-.tag-chip:hover .tag-del-btn { opacity: 0.8; }
-.tag-del-btn:hover { opacity: 1 !important; transform: scale(1.2); }
+.tag-chip:hover { color: var(--text); background: var(--surface3, rgba(255,255,255,0.1)); }
+.tag-chip.selected { color: var(--text); border-color: currentColor; transform: none; background: var(--surface2); }
+.tag-chip.tc0.selected { color: #0A7AFF; border-color: rgba(10,122,255,0.4); background: rgba(10,122,255,0.08); }
+.tag-chip.tc1.selected { color: #30D158; border-color: rgba(48,209,88,0.4); background: rgba(48,209,88,0.08); }
+.tag-chip.tc2.selected { color: #FF9F0A; border-color: rgba(255,159,10,0.4); background: rgba(255,159,10,0.08); }
+.tag-chip.tc3.selected { color: #BF5AF2; border-color: rgba(191,90,242,0.4); background: rgba(191,90,242,0.08); }
+.tag-chip.tc4.selected { color: #FF6B6B; border-color: rgba(255,107,107,0.4); background: rgba(255,107,107,0.08); }
+.tag-chip.tc5.selected { color: #5AC8FA; border-color: rgba(90,200,250,0.4); background: rgba(90,200,250,0.08); }
+.tag-chip.tc0 { color: rgba(10,122,255,0.7); }
+.tag-chip.tc1 { color: rgba(48,209,88,0.7); }
+.tag-chip.tc2 { color: rgba(255,159,10,0.7); }
+.tag-chip.tc3 { color: rgba(191,90,242,0.7); }
+.tag-chip.tc4 { color: rgba(255,107,107,0.7); }
+.tag-chip.tc5 { color: rgba(90,200,250,0.7); }
+
 
 /* ITEMS */
 .items-section { padding: 16px 26px 26px; }
@@ -1434,6 +1497,22 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
       <button class="new-proj-btn" onclick="openNewProject()" title="New project">+</button>
     </div>
 
+    <!-- PROJECT LIST DROPDOWN -->
+    <div class="proj-dropdown-backdrop" id="projDropdownBackdrop" onclick="closeProjDropdown()"></div>
+    <div class="proj-dropdown" id="projDropdown"></div>
+
+    <!-- RENAME PROJECT MODAL -->
+    <div class="modal-backdrop" id="renameProjModal">
+      <div class="modal-box">
+        <h3>Rename Project</h3>
+        <div class="field"><label>New Name</label><input type="text" id="renameProjInput" placeholder="Project name..." onkeydown="if(event.key==='Enter')confirmRenameProject()"></div>
+        <div class="modal-actions">
+          <button class="modal-cancel" onclick="closeRenameModal()">Cancel</button>
+          <button class="modal-confirm" onclick="confirmRenameProject()">Rename</button>
+        </div>
+      </div>
+    </div>
+
     <!-- TOOLBAR -->
     <div class="toolbar">
       <div class="custom-select-wrap" id="sortWrap">
@@ -1986,41 +2065,111 @@ function toggleTheme() {
 }
 
 /* ===== PROJECTS ===== */
+const MAX_VISIBLE_TABS = 4;
+
 function renderProjects() {
-  const bar=document.getElementById('projectsBar');
-  const ps=getProjects();
-  bar.innerHTML='';
-  ps.forEach(p => {
-    const items=getItems(p.id);
-    const wrap=document.createElement('div');
-    wrap.className='proj-tab-wrap';
+  const bar = document.getElementById('projectsBar');
+  const ps = getProjects();
+  bar.innerHTML = '';
 
-    const btn=document.createElement('button');
-    btn.className='proj-tab'+(p.id===CP?' active':'');
-    btn.innerHTML=`${p.name} <span class="tab-count">${items.length}</span>`;
-    btn.onclick=()=>{ CP=p.id; renderProjects(); renderItems(); renderTags(); };
+  // always show active project + up to MAX_VISIBLE_TABS others
+  const activeIdx = ps.findIndex(p => p.id === CP);
+  let visible = [];
+  // always include active
+  if (activeIdx >= 0) visible.push(ps[activeIdx]);
+  // fill remaining slots with others in order
+  for (let i = 0; i < ps.length && visible.length < MAX_VISIBLE_TABS; i++) {
+    if (ps[i].id !== CP) visible.push(ps[i]);
+  }
+  // sort to preserve original order
+  visible.sort((a, b) => ps.indexOf(a) - ps.indexOf(b));
 
-    const share=document.createElement('button');
-    share.className='proj-share-btn';
-    share.title='Share project';
-    share.textContent='👥';
-    share.onclick=(e)=>{ e.stopPropagation(); openShareModal(p.id, p.name); };
+  visible.forEach(p => {
+    const items = getItems(p.id);
+    const wrap = document.createElement('div');
+    wrap.className = 'proj-tab-wrap';
 
-    const del=document.createElement('button');
-    del.className='proj-del-btn';
-    del.title='Delete project';
-    del.textContent='✕';
-    del.onclick=(e)=>{ e.stopPropagation(); deleteProject(p.id, p.name); };
+    const btn = document.createElement('button');
+    btn.className = 'proj-tab' + (p.id === CP ? ' active' : '');
+    btn.innerHTML = `${esc(p.name)} <span class="tab-count">${items.length}</span>`;
+    btn.onclick = () => { CP = p.id; renderProjects(); renderItems(); renderTags(); };
+
+    const rename = document.createElement('button');
+    rename.className = 'proj-rename-btn';
+    rename.title = 'Rename project';
+    rename.textContent = '✏️';
+    rename.onclick = (e) => { e.stopPropagation(); openRenameModal(p.id, p.name); };
+
+    const share = document.createElement('button');
+    share.className = 'proj-share-btn';
+    share.title = 'Share project';
+    share.textContent = '👥';
+    share.onclick = (e) => { e.stopPropagation(); openShareModal(p.id, p.name); };
+
+    const del = document.createElement('button');
+    del.className = 'proj-del-btn';
+    del.title = 'Delete project';
+    del.textContent = '✕';
+    del.onclick = (e) => { e.stopPropagation(); deleteProject(p.id, p.name); };
 
     wrap.appendChild(btn);
+    wrap.appendChild(rename);
     wrap.appendChild(share);
     wrap.appendChild(del);
     bar.appendChild(wrap);
   });
-  const add=document.createElement('button');
-  add.className='new-proj-btn'; add.textContent='+'; add.title='New project';
-  add.onclick=openNewProject;
+
+  // "more" button if hidden projects exist
+  const hidden = ps.filter(p => !visible.find(v => v.id === p.id));
+  if (hidden.length > 0) {
+    const more = document.createElement('button');
+    more.className = 'proj-more-btn';
+    more.innerHTML = `⋯ <span style="font-size:10px;opacity:0.7">${hidden.length} more</span>`;
+    more.title = 'All projects';
+    more.onclick = (e) => { e.stopPropagation(); toggleProjDropdown(more); };
+    bar.appendChild(more);
+  }
+
+  const add = document.createElement('button');
+  add.className = 'new-proj-btn'; add.textContent = '+'; add.title = 'New project';
+  add.onclick = openNewProject;
   bar.appendChild(add);
+}
+
+function toggleProjDropdown(anchor) {
+  const dropdown = document.getElementById('projDropdown');
+  const backdrop = document.getElementById('projDropdownBackdrop');
+  if (dropdown.classList.contains('open')) { closeProjDropdown(); return; }
+
+  const ps = getProjects();
+  dropdown.innerHTML = '';
+  ps.forEach(p => {
+    const items = getItems(p.id);
+    const row = document.createElement('div');
+    row.className = 'proj-dropdown-item' + (p.id === CP ? ' active' : '');
+    row.innerHTML = `
+      <span class="proj-dd-name">${esc(p.name)}</span>
+      <span class="proj-dd-count">${items.length}</span>
+      <div class="proj-dd-actions">
+        <button title="Rename" onclick="event.stopPropagation();closeProjDropdown();openRenameModal('${p.id}','${p.name.replace(/'/g,"\'")}')">✏️</button>
+        <button title="Share" onclick="event.stopPropagation();closeProjDropdown();openShareModal('${p.id}','${p.name.replace(/'/g,"\'")}')">👥</button>
+        <button title="Delete" onclick="event.stopPropagation();closeProjDropdown();deleteProject('${p.id}','${p.name.replace(/'/g,"\'")}')">✕</button>
+      </div>
+    `;
+    row.onclick = () => { CP = p.id; closeProjDropdown(); renderProjects(); renderItems(); renderTags(); };
+    dropdown.appendChild(row);
+  });
+
+  const rect = anchor.getBoundingClientRect();
+  dropdown.style.top = (rect.bottom + 6) + 'px';
+  dropdown.style.left = rect.left + 'px';
+  dropdown.classList.add('open');
+  backdrop.classList.add('open');
+}
+
+function closeProjDropdown() {
+  document.getElementById('projDropdown').classList.remove('open');
+  document.getElementById('projDropdownBackdrop').classList.remove('open');
 }
 
 let pendingDeleteId = null;
@@ -2077,6 +2226,39 @@ document.getElementById('delProjModal').addEventListener('click', e => {
   if (e.target === document.getElementById('delProjModal')) closeDelModal();
 });
 
+let renamingProjId = null;
+
+function openRenameModal(id, currentName) {
+  renamingProjId = id;
+  const input = document.getElementById('renameProjInput');
+  input.value = currentName.replace(' (shared)', '');
+  document.getElementById('renameProjModal').classList.add('open');
+  setTimeout(() => { input.focus(); input.select(); }, 80);
+}
+
+function closeRenameModal() {
+  document.getElementById('renameProjModal').classList.remove('open');
+  renamingProjId = null;
+}
+
+async function confirmRenameProject() {
+  const name = document.getElementById('renameProjInput').value.trim();
+  if (!name || !renamingProjId) return;
+  const isShared = _projects.find(p => p.id === renamingProjId)?.name?.endsWith('(shared)');
+  const finalName = isShared ? name + ' (shared)' : name;
+  _projects = _projects.map(p => p.id === renamingProjId ? {...p, name: finalName} : p);
+  if (!isShared) {
+    await SB.from('projects').update({ name }).eq('id', renamingProjId);
+  }
+  closeRenameModal();
+  renderProjects();
+  toast('Renamed to "' + name + '"');
+}
+
+document.getElementById('renameProjModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('renameProjModal')) closeRenameModal();
+});
+
 function openNewProject() {
   document.getElementById('projModal').classList.add('open');
   setTimeout(()=>document.getElementById('projNameInput').focus(),80);
@@ -2104,91 +2286,70 @@ document.getElementById('projModal').addEventListener('click', e => {
 
 /* ===== TAGS ===== */
 function renderTagChips() {
-  const row=document.getElementById('tagsRow');
-  const tags=getTags(CP);
-  row.innerHTML='';
-  if(tags.length===0) return;
-  const all=document.createElement('span');
-  all.className='tag-chip'+(selectedTag===null?' selected':'');
-  all.textContent='All'; all.onclick=()=>{ selectedTag=null; renderTagChips(); renderItems(); };
+  const row = document.getElementById('tagsRow');
+  row.innerHTML = '';
+
+  // All button
+  const all = document.createElement('button');
+  all.className = 'tag-chip' + (selectedTag === null ? ' selected' : '');
+  all.textContent = 'All';
+  all.onclick = () => { selectedTag = null; renderTagChips(); renderItems(); };
   row.appendChild(all);
-  tags.forEach(t => {
-    const chip=document.createElement('span');
-    chip.className=`tag-chip tc${t.color}${selectedTag===t.name?' selected':''}`;
 
-    const label=document.createElement('span');
-    label.textContent=t.name;
-    label.onclick=()=>{ selectedTag=selectedTag===t.name?null:t.name; renderTagChips(); renderItems(); };
+  // Only show categories that have at least 1 item in current project
+  const items = getItems(CP);
+  const usedTags = [...new Set(items.map(i => i.tag).filter(Boolean))].sort();
 
-    const delBtn=document.createElement('button');
-    delBtn.className='tag-del-btn';
-    delBtn.textContent='✕';
-    delBtn.title='Delete tag';
-    delBtn.onclick=(e)=>{ e.stopPropagation(); deleteTag(t.name); };
-
-    chip.appendChild(label);
-    chip.appendChild(delBtn);
-    row.appendChild(chip);
+  usedTags.forEach((tagName, idx) => {
+    const btn = document.createElement('button');
+    btn.className = `tag-chip tc${idx % 6}${selectedTag === tagName ? ' selected' : ''}`;
+    btn.textContent = tagName;
+    btn.onclick = () => { selectedTag = selectedTag === tagName ? null : tagName; renderTagChips(); renderItems(); };
+    row.appendChild(btn);
   });
 }
 
-function deleteTag(name) {
-  // remove tag from tags list
-  const tags = getTags(CP).filter(t => t.name !== name);
-  saveTags(CP, tags);
-  // remove tag from all items that had it
-  const items = getItems(CP).map(i => i.tag === name ? {...i, tag:''} : i);
-  saveItems(CP, items);
-  if (selectedTag === name) selectedTag = null;
-  renderTagChips(); renderItems();
-  toast(`Deleted tag "${name}"`);
-}
+function renderTags() { selectedTag = null; renderTagChips(); }
 
-function renderTags() { selectedTag=null; renderTagChips(); }
+function ensureTag(name) { /* tags are now auto-derived from items, no storage needed */ }
 
-function ensureTag(name) {
-  if(!name) return;
-  const tags=getTags(CP);
-  if(!tags.find(t=>t.name===name)) {
-    tags.push({ name, color: tags.length%6 });
-    saveTags(CP,tags);
-  }
-}
+function deleteTag(name) { /* no-op — tags are fixed categories */ }
 
-/* ===== MINECRAFT AUTO-TAG DICTIONARY ===== */
+/* ===== MINECRAFT CATEGORY TAGS (fixed, from minecraftitemids.com) ===== */
 const MC_TAGS = {
-  'Stone': ['stone','cobblestone','cobble','mossy cobblestone','mossy cobble','smooth stone','stone brick','stone bricks','mossy stone brick','cracked stone brick','chiseled stone brick','deepslate','cobbled deepslate','polished deepslate','deepslate brick','deepslate tile','chiseled deepslate','reinforced deepslate','calcite','tuff','diorite','polished diorite','andesite','polished andesite','granite','polished granite','basalt','polished basalt','smooth basalt','blackstone','polished blackstone','gilded blackstone','chiseled polished blackstone','gravel','flint','netherrack','nether brick','red nether brick','end stone','end stone brick','purpur block','purpur pillar','obsidian','crying obsidian','magma block','bedrock'],
-  'Wood': ['oak log','birch log','spruce log','jungle log','acacia log','dark oak log','mangrove log','cherry log','bamboo block','crimson stem','warped stem','stripped oak','stripped birch','stripped spruce','stripped jungle','stripped acacia','stripped dark oak','stripped mangrove','stripped cherry','oak planks','birch planks','spruce planks','jungle planks','acacia planks','dark oak planks','mangrove planks','cherry planks','bamboo planks','crimson planks','warped planks','oak wood','birch wood','spruce wood','jungle wood','acacia wood','dark oak wood','oak slab','birch slab','spruce slab','jungle slab','acacia slab','dark oak slab','mangrove slab','oak stairs','birch stairs','spruce stairs','jungle stairs','acacia stairs','dark oak stairs','oak fence','birch fence','spruce fence','jungle fence','acacia fence','dark oak fence','oak door','birch door','spruce door','jungle door','acacia door','dark oak door','oak trapdoor','birch trapdoor','spruce trapdoor'],
-  'Ore': ['coal ore','iron ore','copper ore','gold ore','redstone ore','lapis ore','diamond ore','emerald ore','nether gold ore','nether quartz ore','ancient debris','deepslate coal ore','deepslate iron ore','deepslate copper ore','deepslate gold ore','deepslate redstone ore','deepslate lapis ore','deepslate diamond ore','deepslate emerald ore','raw iron','raw copper','raw gold','iron ingot','gold ingot','copper ingot','netherite ingot','netherite scrap','coal','diamond','emerald','redstone','lapis lazuli','quartz','amethyst','amethyst shard','prismarine shard','prismarine crystals'],
-  'Food': ['apple','golden apple','enchanted golden apple','bread','carrot','golden carrot','potato','baked potato','poisonous potato','beetroot','beetroot soup','mushroom stew','suspicious stew','rabbit stew','melon slice','glistering melon slice','pumpkin pie','cookie','cake','honey bottle','honeycomb','sweet berries','glow berries','dried kelp','kelp','sugar cane','sugar','wheat','porkchop','cooked porkchop','beef','cooked beef','chicken','cooked chicken','mutton','cooked mutton','rabbit','cooked rabbit','cod','cooked cod','salmon','cooked salmon','tropical fish','pufferfish','rotten flesh','spider eye','fermented spider eye','egg','milk bucket','chorus fruit','popped chorus fruit'],
-  'Mob Drop': ['string','feather','leather','bone','bone meal','arrow','gunpowder','blaze rod','blaze powder','ghast tear','slimeball','magma cream','ender pearl','eye of ender','nether star','wither skeleton skull','skeleton skull','zombie head','creeper head','dragon head','shulker shell','rabbit hide','rabbit foot','turtle shell','scute','phantom membrane','totem of undying','trident','nautilus shell','heart of the sea','ink sac','glow ink sac','crying obsidian','spider eye'],
-  'Redstone': ['redstone dust','redstone block','redstone torch','redstone lamp','repeater','comparator','piston','sticky piston','observer','dropper','dispenser','hopper','rail','powered rail','detector rail','activator rail','lever','button','pressure plate','tripwire hook','tripwire','daylight detector','tnt','note block','jukebox','bell','target','lightning rod','sculk sensor','calibrated sculk sensor','sculk shrieker','sculk catalyst'],
-  'Tools': ['wooden pickaxe','stone pickaxe','iron pickaxe','golden pickaxe','diamond pickaxe','netherite pickaxe','wooden axe','stone axe','iron axe','golden axe','diamond axe','netherite axe','wooden shovel','stone shovel','iron shovel','golden shovel','diamond shovel','netherite shovel','wooden hoe','stone hoe','iron hoe','golden hoe','diamond hoe','netherite hoe','wooden sword','stone sword','iron sword','golden sword','diamond sword','netherite sword','bow','crossbow','fishing rod','shears','flint and steel','brush','spyglass','compass','clock','map','filled map','empty map','name tag','lead','saddle'],
-  'Armor': ['leather helmet','leather chestplate','leather leggings','leather boots','iron helmet','iron chestplate','iron leggings','iron boots','golden helmet','golden chestplate','golden leggings','golden boots','chainmail helmet','chainmail chestplate','chainmail leggings','chainmail boots','diamond helmet','diamond chestplate','diamond leggings','diamond boots','netherite helmet','netherite chestplate','netherite leggings','netherite boots','turtle helmet','elytra','shield'],
-  'Potion': ['potion','splash potion','lingering potion','water bottle','awkward potion','thick potion','mundane potion','potion of swiftness','potion of slowness','potion of strength','potion of weakness','potion of healing','potion of harming','potion of leaping','potion of regeneration','potion of fire resistance','potion of water breathing','potion of night vision','potion of invisibility','potion of poison','potion of slow falling','potion of luck'],
-  'Glass': ['glass','glass pane','stained glass','white glass','orange glass','magenta glass','light blue glass','yellow glass','lime glass','pink glass','gray glass','light gray glass','cyan glass','purple glass','blue glass','brown glass','green glass','red glass','black glass','tinted glass'],
-  'Sand': ['sand','red sand','sandstone','red sandstone','smooth sandstone','chiseled sandstone','cut sandstone','soul sand','soul soil','clay','clay ball','terracotta','white terracotta','orange terracotta','magenta terracotta','glazed terracotta','concrete','concrete powder','dirt','coarse dirt','rooted dirt','grass block','podzol','mycelium','farmland','path'],
-  'Plant': ['oak sapling','birch sapling','spruce sapling','jungle sapling','acacia sapling','dark oak sapling','mangrove propagule','cherry sapling','azalea','flowering azalea','leaves','oak leaves','birch leaves','spruce leaves','jungle leaves','acacia leaves','dark oak leaves','mangrove leaves','cherry leaves','grass','tall grass','fern','large fern','dead bush','flower','poppy','dandelion','blue orchid','allium','azure bluet','red tulip','sunflower','lilac','rose bush','peony','lily of the valley','wither rose','lily pad','seagrass','sea pickle','coral','bamboo','cactus','vine','weeping vines','twisting vines','moss','moss block','moss carpet','spore blossom','big dripleaf','small dripleaf','hanging roots'],
-  'Nether': ['nether brick','nether bricks','red nether brick','nether wart','nether wart block','warped wart block','soul sand','soul soil','magma block','netherrack','glowstone','glowstone dust','nether quartz','nether gold ore','ancient debris','basalt','blackstone','crimson fungus','warped fungus','crimson roots','warped roots','shroomlight','weeping vines','twisting vines','hoglin','piglin','blaze','ghast','strider','zoglin'],
-  'End': ['end stone','end stone brick','purpur block','purpur pillar','end rod','chorus plant','chorus flower','chorus fruit','ender chest','end crystal','dragon egg','elytra','shulker box','shulker shell'],
-  'Dye': ['white dye','orange dye','magenta dye','light blue dye','yellow dye','lime dye','pink dye','gray dye','light gray dye','cyan dye','purple dye','blue dye','brown dye','green dye','red dye','black dye','bone meal','ink sac','cocoa beans','lapis lazuli'],
-  'Storage': ['chest','trapped chest','barrel','shulker box','white shulker box','orange shulker box','magenta shulker box','light blue shulker box','yellow shulker box','lime shulker box','pink shulker box','gray shulker box','light gray shulker box','cyan shulker box','purple shulker box','blue shulker box','brown shulker box','green shulker box','red shulker box','black shulker box','ender chest','bundle'],
-  'Utility': ['crafting table','furnace','blast furnace','smoker','anvil','chipped anvil','damaged anvil','grindstone','smithing table','stonecutter','loom','cartography table','fletching table','brewing stand','cauldron','composter','bookshelf','lectern','enchanting table','beacon','conduit'],
+  'Wood': ['oak log','spruce log','birch log','jungle log','acacia log','dark oak log','mangrove log','cherry log','bamboo block','crimson stem','warped stem','stripped oak log','stripped spruce log','stripped birch log','stripped jungle log','stripped acacia log','stripped dark oak log','stripped mangrove log','stripped cherry log','stripped oak wood','stripped spruce wood','stripped birch wood','stripped jungle wood','stripped acacia wood','stripped dark oak wood','oak wood','spruce wood','birch wood','jungle wood','acacia wood','dark oak wood','oak planks','spruce planks','birch planks','jungle planks','acacia planks','dark oak planks','mangrove planks','cherry planks','bamboo planks','crimson planks','warped planks','oak slab','spruce slab','birch slab','jungle slab','acacia slab','dark oak slab','mangrove slab','cherry slab','bamboo slab','crimson slab','warped slab','oak stairs','spruce stairs','birch stairs','jungle stairs','acacia stairs','dark oak stairs','mangrove stairs','cherry stairs','bamboo stairs','crimson stairs','warped stairs','oak fence','spruce fence','birch fence','jungle fence','acacia fence','dark oak fence','mangrove fence','cherry fence','bamboo fence','crimson fence','warped fence','oak fence gate','spruce fence gate','birch fence gate','jungle fence gate','acacia fence gate','dark oak fence gate','mangrove fence gate','cherry fence gate','bamboo fence gate','crimson fence gate','warped fence gate','oak door','spruce door','birch door','jungle door','acacia door','dark oak door','mangrove door','cherry door','bamboo door','crimson door','warped door','oak trapdoor','spruce trapdoor','birch trapdoor','jungle trapdoor','acacia trapdoor','dark oak trapdoor','mangrove trapdoor','cherry trapdoor','bamboo trapdoor','crimson trapdoor','warped trapdoor','oak button','spruce button','birch button','jungle button','acacia button','dark oak button','mangrove button','cherry button','bamboo button','crimson button','warped button','oak pressure plate','spruce pressure plate','birch pressure plate','jungle pressure plate','acacia pressure plate','dark oak pressure plate','mangrove pressure plate','cherry pressure plate','bamboo pressure plate','crimson pressure plate','warped pressure plate','oak sign','spruce sign','birch sign','jungle sign','acacia sign','dark oak sign','mangrove sign','cherry sign','bamboo sign','crimson sign','warped sign','oak boat','spruce boat','birch boat','jungle boat','acacia boat','dark oak boat','mangrove boat','cherry boat','bamboo raft','chest boat','bookshelf','chiseled bookshelf','crafting table','note block','jukebox','beehive','bee nest'],
+  'Stone': ['stone','granite','polished granite','diorite','polished diorite','andesite','polished andesite','cobblestone','mossy cobblestone','stone bricks','mossy stone bricks','cracked stone bricks','chiseled stone bricks','smooth stone','stone slab','cobblestone slab','stone brick slab','smooth stone slab','stone stairs','cobblestone stairs','stone brick stairs','stone button','stone pressure plate','stonecutter','deepslate','cobbled deepslate','polished deepslate','deepslate bricks','deepslate tiles','chiseled deepslate','cracked deepslate bricks','cracked deepslate tiles','deepslate slab','cobbled deepslate slab','polished deepslate slab','deepslate brick slab','deepslate tile slab','deepslate stairs','cobbled deepslate stairs','polished deepslate stairs','deepslate brick stairs','deepslate tile stairs','reinforced deepslate','calcite','tuff','tuff bricks','polished tuff','dripstone block','pointed dripstone','obsidian','crying obsidian','crying obsidian','bedrock','gravel','flint','clay','clay ball','mud','packed mud','mud bricks','muddy mangrove roots','sandstone','smooth sandstone','chiseled sandstone','cut sandstone','red sandstone','smooth red sandstone','chiseled red sandstone','cut red sandstone','sandstone slab','smooth sandstone slab','cut sandstone slab','red sandstone slab','smooth red sandstone slab','cut red sandstone slab','sandstone stairs','smooth sandstone stairs','red sandstone stairs','smooth red sandstone stairs','prismarine','prismarine bricks','dark prismarine','sea lantern','prismarine slab','prismarine brick slab','dark prismarine slab','prismarine stairs','prismarine brick stairs','dark prismarine stairs','bricks','brick slab','brick stairs','quartz block','smooth quartz','chiseled quartz block','quartz pillar','quartz bricks','smooth quartz slab','quartz slab','smooth quartz stairs','quartz stairs','terracotta','white terracotta','orange terracotta','magenta terracotta','light blue terracotta','yellow terracotta','lime terracotta','pink terracotta','gray terracotta','light gray terracotta','cyan terracotta','purple terracotta','blue terracotta','brown terracotta','green terracotta','red terracotta','black terracotta','glazed terracotta','white glazed terracotta','orange glazed terracotta','magenta glazed terracotta','light blue glazed terracotta','yellow glazed terracotta','lime glazed terracotta','pink glazed terracotta','gray glazed terracotta','light gray glazed terracotta','cyan glazed terracotta','purple glazed terracotta','blue glazed terracotta','brown glazed terracotta','green glazed terracotta','red glazed terracotta','black glazed terracotta','concrete','white concrete','orange concrete','magenta concrete','light blue concrete','yellow concrete','lime concrete','pink concrete','gray concrete','light gray concrete','cyan concrete','purple concrete','blue concrete','brown concrete','green concrete','red concrete','black concrete','concrete powder','white concrete powder','orange concrete powder','magenta concrete powder','light blue concrete powder','yellow concrete powder','lime concrete powder','pink concrete powder','gray concrete powder','light gray concrete powder','cyan concrete powder','purple concrete powder','blue concrete powder','brown concrete powder','green concrete powder','red concrete powder','black concrete powder','coal ore','iron ore','copper ore','gold ore','redstone ore','lapis ore','diamond ore','emerald ore','deepslate coal ore','deepslate iron ore','deepslate copper ore','deepslate gold ore','deepslate redstone ore','deepslate lapis ore','deepslate diamond ore','deepslate emerald ore','nether gold ore','nether quartz ore','ancient debris','amethyst block','budding amethyst','amethyst cluster','large amethyst bud','medium amethyst bud','small amethyst bud','raw copper block','raw iron block','raw gold block','copper block','exposed copper','weathered copper','oxidized copper','cut copper','exposed cut copper','weathered cut copper','oxidized cut copper'],
+  'Sand & Dirt': ['sand','red sand','dirt','coarse dirt','rooted dirt','grass block','podzol','mycelium','farmland','dirt path','soul sand','soul soil','gravel','suspicious sand','suspicious gravel'],
+  'Glass': ['glass','glass pane','tinted glass','white stained glass','orange stained glass','magenta stained glass','light blue stained glass','yellow stained glass','lime stained glass','pink stained glass','gray stained glass','light gray stained glass','cyan stained glass','purple stained glass','blue stained glass','brown stained glass','green stained glass','red stained glass','black stained glass','white stained glass pane','orange stained glass pane','magenta stained glass pane','light blue stained glass pane','yellow stained glass pane','lime stained glass pane','pink stained glass pane','gray stained glass pane','light gray stained glass pane','cyan stained glass pane','purple stained glass pane','blue stained glass pane','brown stained glass pane','green stained glass pane','red stained glass pane','black stained glass pane'],
+  'Ores & Ingots': ['coal','iron ingot','copper ingot','gold ingot','redstone','lapis lazuli','diamond','emerald','netherite ingot','netherite scrap','raw iron','raw copper','raw gold','quartz','amethyst shard','prismarine shard','prismarine crystals','gold nugget','iron nugget','netherite upgrade smithing template','sentry armor trim','dune armor trim','coast armor trim','wild armor trim','ward armor trim','eye armor trim','vex armor trim','tide armor trim','snout armor trim','rib armor trim','spire armor trim','silence armor trim','wayfinder armor trim','raiser armor trim','shaper armor trim','host armor trim'],
+  'Redstone': ['redstone dust','redstone block','redstone torch','redstone lamp','repeater','comparator','piston','sticky piston','slime block','honey block','observer','dropper','dispenser','hopper','minecart','chest minecart','hopper minecart','tnt minecart','furnace minecart','rail','powered rail','detector rail','activator rail','lever','stone button','oak button','spruce button','birch button','jungle button','acacia button','dark oak button','stone pressure plate','oak pressure plate','spruce pressure plate','birch pressure plate','jungle pressure plate','acacia pressure plate','dark oak pressure plate','light weighted pressure plate','heavy weighted pressure plate','tripwire hook','string','daylight detector','tnt','target','lightning rod','sculk sensor','calibrated sculk sensor','sculk shrieker','sculk catalyst','sculk','sculk vein','bell','trapped chest'],
+  'Food': ['apple','golden apple','enchanted golden apple','bread','carrot','golden carrot','potato','baked potato','poisonous potato','beetroot','beetroot soup','mushroom stew','suspicious stew','rabbit stew','melon slice','glistering melon slice','pumpkin pie','cookie','cake','honey bottle','sweet berries','glow berries','dried kelp','porkchop','cooked porkchop','beef','cooked beef','chicken','cooked chicken','mutton','cooked mutton','rabbit','cooked rabbit','cod','cooked cod','salmon','cooked salmon','tropical fish','pufferfish','rotten flesh','spider eye','fermented spider eye','egg','milk bucket','chorus fruit','popped chorus fruit','pumpkin','melon'],
+  'Plants': ['oak sapling','spruce sapling','birch sapling','jungle sapling','acacia sapling','dark oak sapling','mangrove propagule','cherry sapling','azalea','flowering azalea','oak leaves','spruce leaves','birch leaves','jungle leaves','acacia leaves','dark oak leaves','mangrove leaves','cherry leaves','azalea leaves','flowering azalea leaves','grass','tall grass','fern','large fern','dead bush','poppy','dandelion','blue orchid','allium','azure bluet','oxeye daisy','cornflower','lily of the valley','wither rose','red tulip','orange tulip','white tulip','pink tulip','sunflower','lilac','rose bush','peony','spore blossom','big dripleaf','small dripleaf','hanging roots','moss block','moss carpet','vine','weeping vines','twisting vines','lily pad','seagrass','tall seagrass','sea pickle','kelp','bamboo','cactus','sugar cane','brown mushroom','red mushroom','crimson fungus','warped fungus','crimson roots','warped roots','nether sprouts','pitcher plant','pitcher pod','torchflower','torchflower seeds','wheat seeds','pumpkin seeds','melon seeds','beetroot seeds','cocoa beans','sweet berries','glow berries'],
+  'Mob Drops': ['string','feather','leather','bone','bone meal','arrow','tipped arrow','spectral arrow','gunpowder','blaze rod','blaze powder','ghast tear','slimeball','magma cream','ender pearl','eye of ender','nether star','wither skeleton skull','skeleton skull','zombie head','creeper head','player head','dragon head','shulker shell','rabbit hide','rabbit foot','scute','turtle scute','armadillo scute','phantom membrane','totem of undying','trident','nautilus shell','heart of the sea','ink sac','glow ink sac','spider eye','fermented spider eye','bat wing','breeze rod'],
+  'Tools': ['wooden pickaxe','stone pickaxe','iron pickaxe','golden pickaxe','diamond pickaxe','netherite pickaxe','wooden axe','stone axe','iron axe','golden axe','diamond axe','netherite axe','wooden shovel','stone shovel','iron shovel','golden shovel','diamond shovel','netherite shovel','wooden hoe','stone hoe','iron hoe','golden hoe','diamond hoe','netherite hoe','fishing rod','carrot on a stick','warped fungus on a stick','shears','flint and steel','brush','spyglass','compass','clock','map','empty map','filled map','name tag','lead','saddle','bucket','water bucket','lava bucket','milk bucket','powder snow bucket','axolotl bucket','cod bucket','salmon bucket','tropical fish bucket','pufferfish bucket','flint'],
+  'Weapons': ['wooden sword','stone sword','iron sword','golden sword','diamond sword','netherite sword','bow','crossbow','trident','mace'],
+  'Armor': ['leather helmet','leather chestplate','leather leggings','leather boots','iron helmet','iron chestplate','iron leggings','iron boots','golden helmet','golden chestplate','golden leggings','golden boots','chainmail helmet','chainmail chestplate','chainmail leggings','chainmail boots','diamond helmet','diamond chestplate','diamond leggings','diamond boots','netherite helmet','netherite chestplate','netherite leggings','netherite boots','turtle helmet','wolf armor','horse armor','iron horse armor','golden horse armor','diamond horse armor','leather horse armor','elytra','shield'],
+  'Potions': ['potion','splash potion','lingering potion','water bottle','awkward potion','thick potion','mundane potion','potion of swiftness','potion of slowness','potion of strength','potion of weakness','potion of healing','potion of harming','potion of leaping','potion of regeneration','potion of fire resistance','potion of water breathing','potion of night vision','potion of invisibility','potion of poison','potion of slow falling','potion of luck','potion of haste','potion of mining fatigue','potion of oozing','potion of weaving','potion of infested','potion of wind charged','glass bottle'],
+  'Storage': ['chest','trapped chest','barrel','ender chest','bundle','shulker box','white shulker box','orange shulker box','magenta shulker box','light blue shulker box','yellow shulker box','lime shulker box','pink shulker box','gray shulker box','light gray shulker box','cyan shulker box','purple shulker box','blue shulker box','brown shulker box','green shulker box','red shulker box','black shulker box'],
+  'Utility': ['crafting table','furnace','blast furnace','smoker','anvil','chipped anvil','damaged anvil','grindstone','smithing table','stonecutter','loom','cartography table','fletching table','brewing stand','cauldron','water cauldron','lava cauldron','powder snow cauldron','composter','bookshelf','chiseled bookshelf','lectern','enchanting table','beacon','conduit','lightning rod','respawn anchor','lodestone','crying obsidian','nether portal','end portal frame','dragon egg','command block','chain command block','repeating command block','structure block','structure void','jigsaw block','debug stick'],
+  'Dyes': ['white dye','orange dye','magenta dye','light blue dye','yellow dye','lime dye','pink dye','gray dye','light gray dye','cyan dye','purple dye','blue dye','brown dye','green dye','red dye','black dye'],
+  'Nether': ['netherrack','nether bricks','cracked nether bricks','chiseled nether bricks','nether brick slab','nether brick stairs','nether brick fence','red nether bricks','red nether brick slab','red nether brick stairs','nether wart','nether wart block','warped wart block','glowstone','glowstone dust','soul sand','soul soil','soul torch','soul lantern','basalt','polished basalt','smooth basalt','blackstone','polished blackstone','gilded blackstone','chiseled polished blackstone','blackstone slab','polished blackstone slab','blackstone stairs','polished blackstone stairs','magma block','shroomlight','crimson stem','warped stem','crimson planks','warped planks','ancient debris','nether gold ore','nether quartz ore'],
+  'End': ['end stone','end stone bricks','end stone brick slab','end stone brick stairs','purpur block','purpur pillar','purpur slab','purpur stairs','end rod','chorus plant','chorus flower','chorus fruit','ender chest','end crystal','dragon egg','elytra','shulker box'],
+  'Lighting': ['torch','soul torch','lantern','soul lantern','glowstone','sea lantern','shroomlight','glow berries','froglight','pearlescent froglight','verdant froglight','ochre froglight','candle','white candle','orange candle','magenta candle','light blue candle','yellow candle','lime candle','pink candle','gray candle','light gray candle','cyan candle','purple candle','blue candle','brown candle','green candle','red candle','black candle','jack o lantern','campfire','soul campfire','redstone lamp','end rod','beacon'],
+  'Decoration': ['flower pot','armor stand','painting','item frame','glow item frame','banner','white banner','orange banner','magenta banner','light blue banner','yellow banner','lime banner','pink banner','gray banner','light gray banner','cyan banner','purple banner','blue banner','brown banner','green banner','red banner','black banner','carpet','white carpet','orange carpet','magenta carpet','light blue carpet','yellow carpet','lime carpet','pink carpet','gray carpet','light gray carpet','cyan carpet','purple carpet','blue carpet','brown carpet','green carpet','red carpet','black carpet','wool','white wool','orange wool','magenta wool','light blue wool','yellow wool','lime wool','pink wool','gray wool','light gray wool','cyan wool','purple wool','blue wool','brown wool','green wool','red wool','black wool'],
 };
 
 // Build reverse lookup: keyword → tag name
 const MC_TAG_LOOKUP = {};
 for (const [tag, keywords] of Object.entries(MC_TAGS)) {
   for (const kw of keywords) {
-    MC_TAG_LOOKUP[kw.toLowerCase()] = tag;
+    if (!MC_TAG_LOOKUP[kw.toLowerCase()]) MC_TAG_LOOKUP[kw.toLowerCase()] = tag;
   }
 }
 
 function autoTag(itemName) {
   const lower = itemName.toLowerCase().trim();
-  // exact match first
   if (MC_TAG_LOOKUP[lower]) return MC_TAG_LOOKUP[lower];
-  // partial match — check if any keyword is contained in the name
   for (const [kw, tag] of Object.entries(MC_TAG_LOOKUP)) {
     if (lower.includes(kw) || kw.includes(lower)) return tag;
   }
@@ -2202,14 +2363,10 @@ function addItem() {
   const name=nameEl.value.trim();
   if(!name) { nameEl.style.borderColor='rgba(255,58,48,0.5)'; setTimeout(()=>nameEl.style.borderColor='',900); return; }
   const items=getItems(CP);
-  const tagInput=document.getElementById('tagInput');
-  // use manual tag if typed, otherwise auto-detect
-  let tagName = (tagInput && tagInput.value.trim()) ? tagInput.value.trim() : autoTag(name);
-  if(tagName) ensureTag(tagName);
+  const tagName = autoTag(name);
   items.push({ id:Date.now(), name, amount:amtEl.value.trim()||'1', priority:'none', done:false, tag:tagName, order:items.length });
   saveItems(CP,items);
   nameEl.value=''; amtEl.value='';
-  if(tagInput) tagInput.value='';
   nameEl.focus();
   renderProjects(); renderItems(); renderTagChips();
   toast('Item added' + (tagName ? ` — tagged ${tagName}` : ''));
@@ -3155,15 +3312,7 @@ function dragDrop(e) {
 }
 function dragEnd() { document.querySelectorAll('.item').forEach(el=>{el.classList.remove('dragging'); el.classList.remove('drag-over');}); }
 
-/* ===== TAG INPUT in add form ===== */
-(function injectTagInput(){
-  const goBtn=document.querySelector('.add-go-btn');
-  if(!goBtn) return;
-  const wrap=document.createElement('div');
-  wrap.className='add-field xs';
-  wrap.innerHTML='<input type="text" id="tagInput" placeholder="Tag (auto)" onkeydown="ek(event)">';
-  goBtn.parentNode.insertBefore(wrap, goBtn);
-})();
+
 
 /* ===== UTILS ===== */
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
