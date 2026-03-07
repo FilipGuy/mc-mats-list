@@ -1778,25 +1778,37 @@ async function doRegister() {
   btn.disabled = true; btn.textContent = 'Creating account...';
 
   try {
-    const { data: existing } = await SB.from('profiles').select('id').eq('username', u).single();
+    // check username not taken
+    const { data: existing } = await SB.from('profiles').select('id').eq('username', u).maybeSingle();
     if (existing) { showErr('Username already taken.'); btn.disabled=false; btn.textContent='Create Account'; return; }
 
     const fakeEmail = `${u}@mc-materials.app`;
-    const { data, error } = await SB.auth.signUp({ email: fakeEmail, password: p });
-    if (error) { showErr(error.message); btn.disabled=false; btn.textContent='Create Account'; return; }
 
-    await SB.from('profiles').insert({ id: data.user.id, username: u, email: fakeEmail });
+    // sign up
+    const { data: signUpData, error: signUpErr } = await SB.auth.signUp({ email: fakeEmail, password: p });
+    if (signUpErr) { showErr(signUpErr.message); btn.disabled=false; btn.textContent='Create Account'; return; }
 
-    CU = { id: data.user.id, username: u };
-    const defProject = { id: 'proj_default_' + data.user.id, name: 'General', color: 0 };
+    // sign in immediately so RLS sees authenticated user
+    const { data: signInData, error: signInErr } = await SB.auth.signInWithPassword({ email: fakeEmail, password: p });
+    if (signInErr) { showErr('Account created but login failed. Try signing in manually.'); btn.disabled=false; btn.textContent='Create Account'; return; }
+
+    const userId = signInData.user.id;
+
+    // now insert profile with authenticated session
+    const { error: profErr } = await SB.from('profiles').insert({ id: userId, username: u, email: fakeEmail });
+    if (profErr) { showErr('Profile save failed: ' + profErr.message); btn.disabled=false; btn.textContent='Create Account'; return; }
+
+    // create default project
+    const defProject = { id: 'proj_default_' + userId, name: 'General', color: 0 };
     _projects = [defProject];
-    await SB.from('projects').insert({ id: defProject.id, user_id: CU.id, name: defProject.name, color: 0 });
+    await SB.from('projects').insert({ id: defProject.id, user_id: userId, name: defProject.name, color: 0 });
 
+    CU = { id: userId, username: u };
     hideErr();
     toast('Account created!');
     loadApp();
   } catch(e) {
-    showErr('Connection error. Check your internet and try again.');
+    showErr('Connection error: ' + e.message);
     btn.disabled=false; btn.textContent='Create Account';
   }
 }
