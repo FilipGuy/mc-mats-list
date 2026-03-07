@@ -1,6 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
+<script>
+// Apply theme before first paint to avoid flash
+try {
+  const dark = localStorage.getItem('ml_dark');
+  const preset = localStorage.getItem('ml_bg_preset');
+  // default to dark if nothing saved
+  if (dark === null || dark === 'true') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  } else {
+    document.documentElement.setAttribute('data-theme', '');
+  }
+} catch(e) {}
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Materials</title>
@@ -424,160 +437,69 @@ input::placeholder { color: var(--text3); }
 .logout-btn:hover { background: rgba(255,58,48,0.16); }
 
 /* PROJECTS TABS */
-/* ===== BROWSER-STYLE TAB BAR ===== */
+/* ===== PROJECT TABS ===== */
 .projects-bar {
-  display: flex; align-items: flex-end; gap: 2px;
-  padding: 0 26px;
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 26px;
   border-bottom: 1px solid var(--border2);
   overflow-x: auto; overflow-y: visible;
-  scrollbar-width: none;
-  min-height: 44px;
+  scrollbar-width: none; flex-shrink: 0;
 }
 .projects-bar::-webkit-scrollbar { display: none; }
 
 .proj-tab-wrap {
+  display: flex; align-items: center;
+  border-radius: 10px; flex-shrink: 0;
+  transition: background var(--transition);
   position: relative;
-  display: flex; flex-direction: row; align-items: stretch;
+}
+.proj-tab-wrap:hover { background: var(--surface2); }
+.proj-tab-wrap.active { background: var(--accent); box-shadow: 0 3px 12px rgba(10,122,255,0.35); }
+
+.proj-tab {
+  padding: 7px 10px 7px 13px;
+  border: none; background: transparent;
+  color: var(--text2); font-size: 13px; font-weight: 500;
+  cursor: pointer; white-space: nowrap;
+  font-family: 'DM Sans', sans-serif;
+  display: flex; align-items: center; gap: 7px;
+  border-radius: 10px 0 0 10px;
+}
+.proj-tab-wrap:hover .proj-tab { color: var(--text); }
+.proj-tab-wrap.active .proj-tab { color: white; }
+.proj-tab .tab-count {
+  background: var(--surface2); border-radius: 5px;
+  padding: 1px 5px; font-size: 10px;
+  font-family: 'DM Mono', monospace; color: var(--text3);
+}
+.proj-tab-wrap.active .proj-tab .tab-count { background: rgba(255,255,255,0.25); color: white; }
+
+.proj-inline-btn {
+  width: 0; height: 28px; overflow: hidden;
+  border: none; background: transparent;
+  font-size: 11px; cursor: pointer; padding: 0;
+  color: var(--text3); transition: all var(--transition);
+  display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
+.proj-tab-wrap:hover .proj-inline-btn { width: 22px; }
+.proj-inline-btn:hover { color: var(--text); background: rgba(255,255,255,0.1); border-radius: 5px; }
+.proj-inline-btn.danger:hover { color: var(--danger); background: rgba(255,58,48,0.15); }
+.proj-tab-wrap.active .proj-inline-btn { color: rgba(255,255,255,0.6); }
+.proj-tab-wrap.active .proj-inline-btn:hover { color: white; background: rgba(255,255,255,0.15); }
+.proj-tab-wrap.active .proj-inline-btn.danger:hover { background: rgba(255,80,80,0.3); color: white; }
+/* last inline btn gets right border radius */
+.proj-tab-wrap .proj-inline-btn:last-child { border-radius: 0 10px 10px 0; }
 
-/* the actual clickable tab */
-.proj-tab {
-  display: flex; align-items: center; gap: 7px;
-  padding: 9px 12px 9px 14px;
-  border-radius: 10px 10px 0 0;
-  border: 1px solid transparent;
-  border-bottom: none;
-  background: transparent;
-  color: var(--text2);
-  font-size: 13px; font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--transition), color var(--transition);
-  font-family: 'DM Sans', sans-serif;
-  position: relative;
-  margin-bottom: -1px;
-}
-.proj-tab:hover { background: var(--surface2); color: var(--text); }
-.proj-tab.active {
-  background: var(--bg1, #0d1117);
-  color: var(--text);
-  border-color: var(--border2);
-  border-bottom-color: var(--bg1, #0d1117);
-  z-index: 2;
-}
-
-.proj-tab .tab-count {
-  background: var(--surface2);
-  border-radius: 6px; padding: 1px 6px;
-  font-size: 10px; font-family: 'DM Mono', monospace;
-  color: var(--text3);
-}
-.proj-tab.active .tab-count { background: rgba(10,122,255,0.15); color: var(--accent); }
-
-/* arrow chevron — always visible, opens action menu on click */
-.proj-tab-chevron {
-  width: 20px;
-  display: flex; align-items: center; justify-content: center;
-  border-radius: 0 8px 8px 0;
-  border: none; border-left: none;
-  background: transparent;
-  color: transparent;
-  font-size: 9px; cursor: pointer; padding: 0;
-  transition: background var(--transition), color var(--transition);
-  flex-shrink: 0; align-self: stretch;
-}
-.proj-tab-wrap:hover .proj-tab-chevron { color: var(--text3); background: rgba(255,255,255,0.06); }
-.proj-tab-wrap:has(.proj-tab.active) .proj-tab-chevron { background: rgba(0,0,0,0.15); color: rgba(255,255,255,0.5); }
-.proj-tab-wrap:has(.proj-tab.active) .proj-tab-chevron:hover { background: rgba(0,0,0,0.25); color: white; }
-.proj-tab-chevron:hover { color: var(--text) !important; }
-.proj-tab-chevron.open { color: var(--accent) !important; background: rgba(10,122,255,0.1); }
-
-/* floating action menu under the tab */
-.proj-tab-menu {
-  display: none;
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  z-index: 1001;
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  border-radius: 12px;
-  padding: 5px;
-  min-width: 150px;
-  box-shadow: 0 8px 28px rgba(0,0,0,0.45);
-  backdrop-filter: blur(20px);
-}
-.proj-tab-menu.open { display: block; }
-
-.proj-tab-menu-item {
-  display: flex; align-items: center; gap: 9px;
-  padding: 8px 11px;
-  border-radius: 8px; border: none;
-  background: transparent; color: var(--text);
-  font-size: 12px; font-weight: 500;
-  cursor: pointer; width: 100%; text-align: left;
-  transition: background var(--transition);
-  font-family: 'DM Sans', sans-serif;
-}
-.proj-tab-menu-item:hover { background: var(--surface2); }
-.proj-tab-menu-item.danger { color: var(--danger); }
-.proj-tab-menu-item.danger:hover { background: rgba(255,58,48,0.1); }
-.proj-tab-menu-item .menu-icon { font-size: 13px; width: 16px; text-align: center; }
-
-/* add project button */
 .new-proj-btn {
-  padding: 7px 11px;
-  border-radius: 8px;
+  padding: 7px 11px; border-radius: 8px;
   border: 1px dashed var(--border2); background: transparent;
   color: var(--text3); font-size: 16px; cursor: pointer;
   transition: all var(--transition); font-family: 'DM Sans', sans-serif;
   flex-shrink: 0; line-height: 1;
-  align-self: center; margin-left: 4px; margin-bottom: 4px;
 }
 .new-proj-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(10,122,255,0.06); }
 
-/* more button */
-.proj-more-btn {
-  padding: 7px 11px; border-radius: 8px;
-  border: 1px solid var(--border2); background: var(--surface2);
-  color: var(--text2); font-size: 12px; font-weight: 600; cursor: pointer;
-  white-space: nowrap; transition: all var(--transition);
-  font-family: 'DM Sans', sans-serif; flex-shrink: 0;
-  display: flex; align-items: center; gap: 5px;
-  align-self: center; margin-bottom: 4px;
-}
-.proj-more-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(10,122,255,0.06); }
-
-/* project list dropdown (from more button) */
-.proj-dropdown-backdrop { display: none; position: fixed; inset: 0; z-index: 999; }
-.proj-dropdown-backdrop.open { display: block; }
-
-.proj-dropdown {
-  display: none; position: fixed; z-index: 1002;
-  background: var(--surface); border: 1px solid var(--border2);
-  border-radius: 14px; padding: 6px;
-  min-width: 240px; max-height: 400px; overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5); backdrop-filter: blur(20px);
-  scrollbar-width: thin;
-}
-.proj-dropdown.open { display: block; }
-
-.proj-dropdown-item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 9px 12px; border-radius: 9px; cursor: pointer;
-  transition: background var(--transition);
-}
-.proj-dropdown-item:hover { background: var(--surface2); }
-.proj-dropdown-item.active { background: rgba(10,122,255,0.1); }
-.proj-dropdown-item.active .proj-dd-name { color: var(--accent); font-weight: 600; }
-
-.proj-dd-name { flex: 1; font-size: 13px; color: var(--text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.proj-dd-count { font-size: 11px; color: var(--text3); background: var(--surface2); border-radius: 6px; padding: 1px 6px; font-family: 'DM Mono', monospace; flex-shrink: 0; }
-.proj-dd-actions { display: flex; gap: 3px; opacity: 0; transition: opacity var(--transition); flex-shrink: 0; }
-.proj-dropdown-item:hover .proj-dd-actions { opacity: 1; }
-.proj-dd-actions button { width: 22px; height: 22px; border: none; background: var(--surface2); border-radius: 6px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center; transition: background var(--transition); color: var(--text2); }
-.proj-dd-actions button:hover { background: var(--surface3, rgba(255,255,255,0.1)); }
 
 /* TOOLBAR */
 .toolbar {
@@ -1487,9 +1409,6 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
     <div class="projects-bar" id="projectsBar">
       <button class="new-proj-btn" onclick="openNewProject()" title="New project">+</button>
     </div>
-
-    <!-- PROJECT LIST DROPDOWN -->
-    <div class="proj-dropdown-backdrop" id="projDropdownBackdrop" onclick="closeProjDropdown()"></div>
     <div class="proj-dropdown" id="projDropdown"></div>
 
     <!-- RENAME PROJECT MODAL -->
@@ -2002,10 +1921,6 @@ function toggleTheme() {
 /* ===== PROJECTS ===== */
 const MAX_VISIBLE_TABS = 4;
 
-function closeAllTabMenus() {
-  document.querySelectorAll('.proj-tab-menu.open').forEach(m => m.classList.remove('open'));
-  document.querySelectorAll('.proj-tab-chevron.open').forEach(c => c.classList.remove('open'));
-}
 
 function toggleTabMenu(pid, chevronEl) {
   const menu = document.getElementById('tab-menu-' + pid);
@@ -2025,78 +1940,37 @@ function renderProjects() {
   const ps = getProjects();
   bar.innerHTML = '';
 
-  // always show active project + up to MAX_VISIBLE_TABS others
-  const activeIdx = ps.findIndex(p => p.id === CP);
-  let visible = [];
-  // always include active
-  if (activeIdx >= 0) visible.push(ps[activeIdx]);
-  // fill remaining slots with others in order
-  for (let i = 0; i < ps.length && visible.length < MAX_VISIBLE_TABS; i++) {
-    if (ps[i].id !== CP) visible.push(ps[i]);
-  }
-  // sort to preserve original order
-  visible.sort((a, b) => ps.indexOf(a) - ps.indexOf(b));
-
-  visible.forEach(p => {
+  ps.forEach(p => {
     const items = getItems(p.id);
+    const isActive = p.id === CP;
     const wrap = document.createElement('div');
-    wrap.className = 'proj-tab-wrap';
+    wrap.className = 'proj-tab-wrap' + (isActive ? ' active' : '');
 
-    // Tab button with chevron inside
+    // main tab button
     const btn = document.createElement('button');
-    btn.className = 'proj-tab' + (p.id === CP ? ' active' : '');
-    btn.onclick = () => { CP = p.id; closeAllTabMenus(); renderProjects(); renderItems(); renderTags(); };
+    btn.className = 'proj-tab' + (isActive ? ' active' : '');
+    btn.onclick = () => { CP = p.id; renderProjects(); renderItems(); renderTags(); };
+    btn.innerHTML = `<span class="proj-tab-name">${esc(p.name)}</span><span class="tab-count">${items.length}</span>`;
 
-    const nameSpan = document.createElement('span');
-    nameSpan.textContent = p.name;
+    // rename button
+    const renameBtn = document.createElement('button');
+    renameBtn.className = 'proj-inline-btn';
+    renameBtn.title = 'Rename';
+    renameBtn.innerHTML = '✏️';
+    renameBtn.onclick = (e) => { e.stopPropagation(); openRenameModal(p.id, p.name, renameBtn); };
 
-    const countSpan = document.createElement('span');
-    countSpan.className = 'tab-count';
-    countSpan.textContent = items.length;
-
-    btn.appendChild(nameSpan);
-    btn.appendChild(countSpan);
-
-    const chevron = document.createElement('button');
-    chevron.className = 'proj-tab-chevron';
-    chevron.innerHTML = '▾';
-    chevron.title = 'Project options';
-    chevron.onclick = (e) => { e.stopPropagation(); toggleTabMenu(p.id, chevron); };
-
-    // Floating action menu
-    const menu = document.createElement('div');
-    menu.className = 'proj-tab-menu';
-    menu.id = 'tab-menu-' + p.id;
-
-    const menuItems = [
-      { icon: '✏️', label: 'Rename', fn: (e) => { closeAllTabMenus(); openRenameModal(p.id, p.name, chevron); } },
-      { icon: '✕', label: 'Delete', danger: true, fn: () => { closeAllTabMenus(); deleteProject(p.id, p.name); } },
-    ];
-
-    menuItems.forEach(mi => {
-      const item = document.createElement('button');
-      item.className = 'proj-tab-menu-item' + (mi.danger ? ' danger' : '');
-      item.innerHTML = `<span class="menu-icon">${mi.icon}</span>${mi.label}`;
-      item.onclick = (e) => { e.stopPropagation(); mi.fn(); };
-      menu.appendChild(item);
-    });
+    // delete button
+    const delBtn = document.createElement('button');
+    delBtn.className = 'proj-inline-btn danger';
+    delBtn.title = 'Delete';
+    delBtn.innerHTML = '✕';
+    delBtn.onclick = (e) => { e.stopPropagation(); deleteProject(p.id, p.name); };
 
     wrap.appendChild(btn);
-    wrap.appendChild(chevron);
-    wrap.appendChild(menu);
+    wrap.appendChild(renameBtn);
+    wrap.appendChild(delBtn);
     bar.appendChild(wrap);
   });
-
-  // "more" button if hidden projects exist
-  const hidden = ps.filter(p => !visible.find(v => v.id === p.id));
-  if (hidden.length > 0) {
-    const more = document.createElement('button');
-    more.className = 'proj-more-btn';
-    more.innerHTML = `⋯ <span style="font-size:10px;opacity:0.7">${hidden.length} more</span>`;
-    more.title = 'All projects';
-    more.onclick = (e) => { e.stopPropagation(); toggleProjDropdown(more); };
-    bar.appendChild(more);
-  }
 
   const add = document.createElement('button');
   add.className = 'new-proj-btn'; add.textContent = '+'; add.title = 'New project';
@@ -2104,40 +1978,6 @@ function renderProjects() {
   bar.appendChild(add);
 }
 
-function toggleProjDropdown(anchor) {
-  const dropdown = document.getElementById('projDropdown');
-  const backdrop = document.getElementById('projDropdownBackdrop');
-  if (dropdown.classList.contains('open')) { closeProjDropdown(); return; }
-
-  const ps = getProjects();
-  dropdown.innerHTML = '';
-  ps.forEach(p => {
-    const items = getItems(p.id);
-    const row = document.createElement('div');
-    row.className = 'proj-dropdown-item' + (p.id === CP ? ' active' : '');
-    row.innerHTML = `
-      <span class="proj-dd-name">${esc(p.name)}</span>
-      <span class="proj-dd-count">${items.length}</span>
-      <div class="proj-dd-actions">
-        <button title="Rename" onclick="event.stopPropagation();closeProjDropdown();openRenameModal('${p.id}','${p.name.replace(/'/g,"\'")}')">✏️</button>
-        <button title="Delete" onclick="event.stopPropagation();closeProjDropdown();deleteProject('${p.id}','${p.name.replace(/'/g,"\'")}')">✕</button>
-      </div>
-    `;
-    row.onclick = () => { CP = p.id; closeProjDropdown(); renderProjects(); renderItems(); renderTags(); };
-    dropdown.appendChild(row);
-  });
-
-  const rect = anchor.getBoundingClientRect();
-  dropdown.style.top = (rect.bottom + 6) + 'px';
-  dropdown.style.left = rect.left + 'px';
-  dropdown.classList.add('open');
-  backdrop.classList.add('open');
-}
-
-function closeProjDropdown() {
-  document.getElementById('projDropdown').classList.remove('open');
-  document.getElementById('projDropdownBackdrop').classList.remove('open');
-}
 
 let pendingDeleteId = null;
 let pendingDeleteName = '';
