@@ -508,6 +508,19 @@ input::placeholder { color: var(--text3); }
 .proj-tab-wrap:hover .proj-del-btn { opacity: 1; }
 .proj-del-btn:hover { background: rgba(255,58,48,0.2); color: var(--danger); transform: scale(1.1); opacity: 1; }
 
+.proj-share-btn {
+  width: 20px; height: 20px;
+  border-radius: 6px; border: none;
+  background: rgba(10,122,255,0.08);
+  color: var(--accent);
+  font-size: 10px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition);
+  opacity: 0; padding: 0;
+}
+.proj-tab-wrap:hover .proj-share-btn { opacity: 1; }
+.proj-share-btn:hover { background: rgba(10,122,255,0.2); transform: scale(1.1); }
+
 /* TOOLBAR */
 .toolbar {
   display: flex; align-items: center; gap: 8px;
@@ -1410,6 +1423,7 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
         </div>
       </div>
       <div class="nav-right">
+        <button class="icon-btn" id="invitesBtn" onclick="openInvitesModal()" title="Invitations" style="position:relative;">🔔<span id="invitesBadge" style="display:none;position:absolute;top:-3px;right:-3px;background:var(--danger);color:white;border-radius:50%;width:14px;height:14px;font-size:9px;font-weight:700;display:none;align-items:center;justify-content:center;">!</span></button>
         <button class="icon-btn" onclick="openBgModal()" title="Customize background">🎨</button>
         <button class="logout-btn" onclick="doLogout()">Sign Out</button>
       </div>
@@ -1456,7 +1470,7 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 
     <!-- ADD FORM -->
     <div class="add-form">
-      <div class="add-form-label">Add Item <button class="import-btn" onclick="openImportModal()" title="Import Schematic">📂 Import Schematic</button></div>
+      <div class="add-form-label">Add Item <button class="import-btn" onclick="openImportModal()" title="Import from Litematica">📂 Import Litematica</button></div>
       <div class="add-row">
         <div class="add-field"><input type="text" id="iName" placeholder="Item name" onkeydown="ek(event)"></div>
         <div class="add-field xs"><input type="text" id="iAmt" placeholder="Qty" onkeydown="ek(event)"></div>
@@ -1551,21 +1565,46 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
   </div>
 </div>
 
+<!-- SHARE PROJECT MODAL -->
+<div class="bg-modal-backdrop" id="shareModal">
+  <div class="bg-modal" style="max-width:420px;">
+    <h3>Share Project <button class="bg-modal-close" onclick="closeShareModal()">✕</button></h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6;">Invite someone by their username. They will get a notification and can accept or decline.</p>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <input id="shareUsernameInput" placeholder="Enter username..." style="flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--text);outline:none;font-family:'DM Sans',sans-serif;">
+      <button class="bg-done-btn" onclick="sendInvite()" style="flex-shrink:0;">Invite</button>
+    </div>
+    <div id="shareError" style="display:none;margin-bottom:10px;padding:8px 12px;background:rgba(255,58,48,0.1);border:1px solid rgba(255,58,48,0.2);border-radius:8px;font-size:12px;color:var(--danger);"></div>
+    <div id="shareSuccess" style="display:none;margin-bottom:10px;padding:8px 12px;background:rgba(42,199,105,0.1);border:1px solid rgba(42,199,105,0.2);border-radius:8px;font-size:12px;color:var(--success);"></div>
+    <div class="bg-section-title" style="margin-top:4px;">People with access</div>
+    <div id="shareMembers" style="display:flex;flex-direction:column;gap:6px;margin-top:8px;"></div>
+  </div>
+</div>
+
+<!-- INVITES MODAL -->
+<div class="bg-modal-backdrop" id="invitesModal">
+  <div class="bg-modal" style="max-width:400px;">
+    <h3>Invitations <button class="bg-modal-close" onclick="closeInvitesModal()">✕</button></h3>
+    <div id="invitesList" style="display:flex;flex-direction:column;gap:8px;margin-top:4px;"></div>
+    <div id="invitesEmpty" style="display:none;font-size:13px;color:var(--text2);text-align:center;padding:20px 0;">No pending invitations</div>
+  </div>
+</div>
+
 <!-- IMPORT MODAL -->
 <div class="bg-modal-backdrop" id="importModal">
   <div class="bg-modal" style="max-width:480px;">
-    <h3>Import Schematic <button class="bg-modal-close" onclick="closeImportModal()">✕</button></h3>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6;">Upload a <strong style="color:var(--text)">.litematic</strong> file directly, or paste a Litematica material list text. Items already in the list will be skipped.</p>
+    <h3>Import Litematica <button class="bg-modal-close" onclick="closeImportModal()">✕</button></h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6;">Paste your Litematica material list text below, or upload the .txt file directly. Items already in the list will be skipped.</p>
 
     <div class="upload-zone" style="margin-bottom:12px;" id="importDropZone">
-      <input type="file" id="importFileInput" accept=".litematic,.schem,.schematic,.txt,text/plain" onchange="handleImportFile(event)">
-      <div class="upload-icon">📦</div>
-      <p>Click or drop schematic file here</p>
-      <small>Supports .litematic, .schem, .schematic, and .txt</small>
+      <input type="file" id="importFileInput" accept=".txt,text/plain" onchange="handleImportFile(event)">
+      <div class="upload-icon">📄</div>
+      <p>Click or drop .txt file here</p>
+      <small>From Litematica material list export</small>
     </div>
 
-    <div class="bg-section-title">Or paste material list text</div>
-    <textarea id="importTextarea" placeholder="Paste the Litematica table here..." style="width:100%;height:120px;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:12px;font-size:12px;font-family:'DM Mono',monospace;color:var(--text);resize:vertical;outline:none;line-height:1.6;"></textarea>
+    <div class="bg-section-title">Or paste text</div>
+    <textarea id="importTextarea" placeholder="Paste the Litematica table here..." style="width:100%;height:160px;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:12px;font-size:12px;font-family:'DM Mono',monospace;color:var(--text);resize:vertical;outline:none;line-height:1.6;"></textarea>
 
     <div id="importPreview" style="display:none;margin-top:12px;">
       <div class="bg-section-title">Found items</div>
@@ -1843,13 +1882,26 @@ function sw(reg) {
 async function loadCloudData() {
   const uid = CU.id;
 
-  const [{ data: projects }, { data: items }, { data: tags }] = await Promise.all([
+  const [{ data: projects }, { data: items }, { data: tags }, { data: members }] = await Promise.all([
     SB.from('projects').select('*').eq('user_id', uid).order('created_at'),
     SB.from('items').select('*').eq('user_id', uid).order('item_order'),
-    SB.from('tags').select('*').eq('user_id', uid)
+    SB.from('tags').select('*').eq('user_id', uid),
+    SB.from('project_members').select('project_id').eq('user_id', uid)
   ]);
 
   _projects = (projects || []).map(p => ({ id: p.id, name: p.name, color: p.color }));
+
+  // load shared projects too
+  if (members && members.length > 0) {
+    const sharedIds = members.map(m => m.project_id);
+    const { data: sharedProjects } = await SB.from('projects').select('*').in('id', sharedIds);
+    (sharedProjects || []).forEach(p => {
+      if (!_projects.find(x => x.id === p.id)) {
+        _projects.push({ id: p.id, name: p.name + ' (shared)', color: p.color });
+      }
+    });
+  }
+
   if (!_projects.length) {
     const defProject = { id: 'proj_default_' + uid, name: 'General', color: 0 };
     _projects = [defProject];
@@ -1859,11 +1911,20 @@ async function loadCloudData() {
   _items = {};
   (items || []).forEach(i => {
     if (!_items[i.project_id]) _items[i.project_id] = [];
-    _items[i.project_id].push({
-      id: i.id, name: i.name, amount: i.amount,
-      tag: i.tag, priority: i.priority, done: i.done, order: i.item_order
-    });
+    _items[i.project_id].push({ id: i.id, name: i.name, amount: i.amount, tag: i.tag, priority: i.priority, done: i.done, order: i.item_order });
   });
+
+  // load items for shared projects
+  if (members && members.length > 0) {
+    const sharedIds = members.map(m => m.project_id);
+    const { data: sharedItems } = await SB.from('items').select('*').in('project_id', sharedIds).order('item_order');
+    (sharedItems || []).forEach(i => {
+      if (!_items[i.project_id]) _items[i.project_id] = [];
+      if (!_items[i.project_id].find(x => x.id === i.id)) {
+        _items[i.project_id].push({ id: i.id, name: i.name, amount: i.amount, tag: i.tag, priority: i.priority, done: i.done, order: i.item_order });
+      }
+    });
+  }
 
   _tags = {};
   (tags || []).forEach(t => {
@@ -1883,6 +1944,7 @@ function loadApp() {
   renderItems();
   renderTags();
   applyTheme();
+  setTimeout(checkPendingInvites, 500);
 }
 
 /* ===== THEME ===== */
@@ -1919,6 +1981,12 @@ function renderProjects() {
     btn.innerHTML=`${p.name} <span class="tab-count">${items.length}</span>`;
     btn.onclick=()=>{ CP=p.id; renderProjects(); renderItems(); renderTags(); };
 
+    const share=document.createElement('button');
+    share.className='proj-share-btn';
+    share.title='Share project';
+    share.textContent='👥';
+    share.onclick=(e)=>{ e.stopPropagation(); openShareModal(p.id, p.name); };
+
     const del=document.createElement('button');
     del.className='proj-del-btn';
     del.title='Delete project';
@@ -1926,6 +1994,7 @@ function renderProjects() {
     del.onclick=(e)=>{ e.stopPropagation(); deleteProject(p.id, p.name); };
 
     wrap.appendChild(btn);
+    wrap.appendChild(share);
     wrap.appendChild(del);
     bar.appendChild(wrap);
   });
@@ -2461,35 +2530,12 @@ document.getElementById('importModal').addEventListener('click', e => {
 function handleImportFile(e) {
   const file = e.target.files[0];
   if (!file) return;
-  const name = file.name.toLowerCase();
-
-  if (name.endsWith('.litematic') || name.endsWith('.schem') || name.endsWith('.schematic')) {
-    const reader = new FileReader();
-    reader.onload = ev => {
-      try {
-        const compressed = new Uint8Array(ev.target.result);
-        const decompressed = pako.inflate(compressed);
-        if (name.endsWith('.litematic')) {
-          parseLitematicBinary(decompressed, file.name);
-        } else if (name.endsWith('.schem')) {
-          parseSchemBinary(decompressed, file.name);
-        } else {
-          parseSchematicBinary(decompressed, file.name);
-        }
-      } catch(err) {
-        document.getElementById('importError').textContent = 'Could not read file: ' + err.message;
-        document.getElementById('importError').style.display = 'block';
-      }
-    };
-    reader.readAsArrayBuffer(file);
-  } else {
-    const reader = new FileReader();
-    reader.onload = ev => {
-      document.getElementById('importTextarea').value = ev.target.result;
-      processImportText(ev.target.result);
-    };
-    reader.readAsText(file);
-  }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('importTextarea').value = ev.target.result;
+    processImportText(ev.target.result);
+  };
+  reader.readAsText(file);
 }
 
 document.getElementById('importTextarea').addEventListener('input', function() {
@@ -3517,6 +3563,158 @@ document.querySelectorAll('.btn, .add-go-btn').forEach(magneticHover);
     card.style.backgroundImage = '';
   });
 })();
+
+/* ===== PROJECT SHARING ===== */
+let shareProjectId = null;
+let shareProjectName = '';
+
+function openShareModal(pid, pname) {
+  shareProjectId = pid;
+  shareProjectName = pname;
+  document.getElementById('shareError').style.display = 'none';
+  document.getElementById('shareSuccess').style.display = 'none';
+  document.getElementById('shareUsernameInput').value = '';
+  document.getElementById('shareModal').classList.add('open');
+  loadShareMembers(pid);
+}
+
+function closeShareModal() {
+  document.getElementById('shareModal').classList.remove('open');
+}
+
+document.getElementById('shareModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('shareModal')) closeShareModal();
+});
+
+async function loadShareMembers(pid) {
+  const el = document.getElementById('shareMembers');
+  el.innerHTML = '<div style="font-size:12px;color:var(--text3);">Loading...</div>';
+  const { data } = await SB.from('project_members')
+    .select('user_id, role, profiles(username)')
+    .eq('project_id', pid);
+  el.innerHTML = '';
+  if (!data || data.length === 0) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--text3);">Only you have access.</div>';
+    return;
+  }
+  data.forEach(m => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface2);border-radius:10px;';
+    const isOwner = m.role === 'owner';
+    row.innerHTML = `
+      <span style="font-size:13px;font-weight:500;color:var(--text);">@${m.profiles?.username || 'unknown'}</span>
+      <span style="font-size:11px;color:var(--text3);background:var(--surface);border-radius:6px;padding:2px 8px;">${isOwner ? 'Owner' : 'Member'}</span>
+    `;
+    el.appendChild(row);
+  });
+}
+
+async function sendInvite() {
+  const username = document.getElementById('shareUsernameInput').value.trim().toLowerCase();
+  const errEl = document.getElementById('shareError');
+  const okEl = document.getElementById('shareSuccess');
+  errEl.style.display = 'none'; okEl.style.display = 'none';
+
+  if (!username) { errEl.textContent = 'Enter a username.'; errEl.style.display = 'block'; return; }
+  if (username === CU.username) { errEl.textContent = 'You cannot invite yourself.'; errEl.style.display = 'block'; return; }
+
+  const { data: target } = await SB.from('profiles').select('id,username').eq('username', username).maybeSingle();
+  if (!target) { errEl.textContent = 'Username not found.'; errEl.style.display = 'block'; return; }
+
+  // check not already invited
+  const { data: existing } = await SB.from('invites').select('id').eq('project_id', shareProjectId).eq('to_user_id', target.id).maybeSingle();
+  if (existing) { errEl.textContent = 'Already invited.'; errEl.style.display = 'block'; return; }
+
+  const { error } = await SB.from('invites').insert({
+    project_id: shareProjectId,
+    project_name: shareProjectName,
+    from_user_id: CU.id,
+    from_username: CU.username,
+    to_user_id: target.id,
+    status: 'pending'
+  });
+
+  if (error) { errEl.textContent = 'Failed to send invite: ' + error.message; errEl.style.display = 'block'; return; }
+
+  okEl.textContent = `Invite sent to @${username}!`;
+  okEl.style.display = 'block';
+  document.getElementById('shareUsernameInput').value = '';
+}
+
+async function openInvitesModal() {
+  document.getElementById('invitesModal').classList.add('open');
+  await loadInvites();
+}
+
+function closeInvitesModal() {
+  document.getElementById('invitesModal').classList.remove('open');
+}
+
+document.getElementById('invitesModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('invitesModal')) closeInvitesModal();
+});
+
+async function loadInvites() {
+  const list = document.getElementById('invitesList');
+  const empty = document.getElementById('invitesEmpty');
+  list.innerHTML = '<div style="font-size:12px;color:var(--text3);text-align:center;padding:16px 0;">Loading...</div>';
+  empty.style.display = 'none';
+
+  const { data } = await SB.from('invites').select('*').eq('to_user_id', CU.id).eq('status', 'pending');
+
+  list.innerHTML = '';
+  if (!data || data.length === 0) { empty.style.display = 'block'; return; }
+
+  data.forEach(inv => {
+    const div = document.createElement('div');
+    div.style.cssText = 'padding:12px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;';
+    div.innerHTML = `
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;">📁 ${esc(inv.project_name)}</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">From <strong>@${esc(inv.from_username)}</strong></div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="respondInvite('${inv.id}','${inv.project_id}','${esc(inv.project_name)}','accepted')" style="flex:1;padding:7px;border-radius:8px;border:none;background:var(--success);color:white;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Accept</button>
+        <button onclick="respondInvite('${inv.id}','${inv.project_id}','${esc(inv.project_name)}','declined')" style="flex:1;padding:7px;border-radius:8px;border:none;background:var(--surface);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Decline</button>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+async function respondInvite(inviteId, projectId, projectName, status) {
+  await SB.from('invites').update({ status }).eq('id', inviteId);
+
+  if (status === 'accepted') {
+    // add to project_members
+    await SB.from('project_members').insert({ project_id: projectId, user_id: CU.id, role: 'member' });
+    // load the shared project into local state
+    const { data: proj } = await SB.from('projects').select('*').eq('id', projectId).single();
+    if (proj) {
+      _projects.push({ id: proj.id, name: proj.name, color: proj.color });
+      const { data: items } = await SB.from('items').select('*').eq('project_id', projectId).order('item_order');
+      _items[projectId] = (items || []).map(i => ({ id: i.id, name: i.name, amount: i.amount, tag: i.tag, priority: i.priority, done: i.done, order: i.item_order }));
+      const { data: tags } = await SB.from('tags').select('*').eq('project_id', projectId);
+      _tags[projectId] = (tags || []).map(t => ({ name: t.name, color: t.color }));
+    }
+    toast(`Joined project "${projectName}"`);
+    renderProjects();
+  } else {
+    toast('Invite declined');
+  }
+
+  closeInvitesModal();
+}
+
+async function checkPendingInvites() {
+  if (!SB || !CU) return;
+  const { data } = await SB.from('invites').select('id').eq('to_user_id', CU.id).eq('status', 'pending');
+  const badge = document.getElementById('invitesBadge');
+  if (data && data.length > 0) {
+    badge.style.display = 'flex';
+    badge.textContent = data.length;
+  } else {
+    badge.style.display = 'none';
+  }
+}
 
 /* ===== AUTO SESSION ===== */
 window.onload = async () => {
