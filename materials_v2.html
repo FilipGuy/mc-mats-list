@@ -1389,7 +1389,7 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 
   <div id="registerForm" style="display:none">
     <div class="field"><label>Username</label><input type="text" id="ru" placeholder="Choose a username" autocomplete="username"></div>
-    <div class="field"><label>Password</label><input type="password" id="rp" placeholder="At least 4 characters" autocomplete="new-password"></div>
+    <div class="field"><label>Password</label><input type="password" id="rp" placeholder="At least 6 characters" autocomplete="new-password"></div>
     <div class="field"><label>Confirm password</label><input type="password" id="rp2" placeholder="Repeat password" autocomplete="new-password"></div>
     <button id="registerBtn" class="btn" onclick="doRegister()">Create Account</button>
     <div class="switch-link">Already have one? <span onclick="sw(0)">Sign in</span></div>
@@ -1635,7 +1635,18 @@ const _sbc = (window.supabase && window.supabase.createClient) ? window.supabase
 if (!_sbc) { document.body.innerHTML = '<div style="color:red;padding:40px;font-size:18px;">Failed to load Supabase SDK. Check your internet connection and reload.</div>'; }
 const SB = _sbc(
   'https://jhflvmhdhrrgkacpcbt.supabase.co',
-  'sb_publishable_n-eWkBoINXgD5-m8w69JVw_8AxNkkmp'
+  'sb_publishable_n-eWkBoINXgD5-m8w69JVw_8AxNkkmp',
+  {
+    auth: {
+      storage: {
+        getItem: k => { try { return localStorage.getItem(k); } catch { return null; } },
+        setItem: (k, v) => { try { localStorage.setItem(k, v); } catch {} },
+        removeItem: k => { try { localStorage.removeItem(k); } catch {} }
+      },
+      persistSession: true,
+      autoRefreshToken: true
+    }
+  }
 );
 
 /* ===== STATE ===== */
@@ -1783,6 +1794,8 @@ async function doLogout() {
   await SB.auth.signOut();
   CU=null; CP=null;
   _projects=[]; _items={}; _tags={};
+  // wipe all old local data
+  try { localStorage.clear(); } catch {}
   document.getElementById('appScreen').style.display='none';
   document.getElementById('loginScreen').style.display='block';
   document.getElementById('lu').value=''; document.getElementById('lp').value='';
@@ -3484,6 +3497,15 @@ document.querySelectorAll('.btn, .add-go-btn').forEach(magneticHover);
 window.onload = async () => {
   applyTheme();
   applyBg();
+
+  // clear any leftover data from old local-only version
+  try {
+    Object.keys(localStorage).forEach(k => {
+      if (k.startsWith('ml_users') || k.startsWith('ml_session') || k.startsWith('ml_') && k.includes('_projects') || k.startsWith('ml_') && k.includes('_items') || k.startsWith('ml_') && k.includes('_tags')) {
+        localStorage.removeItem(k);
+      }
+    });
+  } catch {}
 
   const { data: { session } } = await SB.auth.getSession();
   if (session) {
