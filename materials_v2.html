@@ -436,7 +436,7 @@ input::placeholder { color: var(--text3); }
 
 .proj-tab {
   display: flex; align-items: center; gap: 6px;
-  padding: 7px 14px;
+  padding: 6px 10px 6px 14px;
   border-radius: 10px;
   border: 1px solid transparent;
   background: transparent;
@@ -448,78 +448,56 @@ input::placeholder { color: var(--text3); }
   font-family: 'DM Sans', sans-serif;
 }
 
-.proj-tab:hover { background: var(--surface2); color: var(--text); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.07); }
-
-.proj-tab.active {
-  background: var(--accent);
-  color: white;
-  border-color: transparent;
-  box-shadow: 0 4px 14px rgba(10,122,255,0.3);
-}
+.proj-tab:hover { background: var(--surface2); color: var(--text); }
+.proj-tab.active { background: var(--accent); color: white; border-color: transparent; box-shadow: 0 4px 14px rgba(10,122,255,0.3); }
 
 .proj-tab .tab-count {
   background: rgba(255,255,255,0.25);
-  border-radius: 6px;
-  padding: 1px 6px;
-  font-size: 11px;
-  font-family: 'DM Mono', monospace;
+  border-radius: 6px; padding: 1px 6px;
+  font-size: 11px; font-family: 'DM Mono', monospace;
 }
-
-.proj-tab:not(.active) .tab-count {
-  background: var(--surface2);
-  color: var(--text3);
-}
+.proj-tab:not(.active) .tab-count { background: var(--surface2); color: var(--text3); }
 
 .new-proj-btn {
-  padding: 7px 12px;
-  border-radius: 10px;
-  border: 1px dashed var(--border2);
-  background: transparent;
-  color: var(--text3);
-  font-size: 18px;
-  cursor: pointer;
-  transition: all var(--transition);
-  font-family: 'DM Sans', sans-serif;
-  flex-shrink: 0;
-  line-height: 1;
+  padding: 7px 12px; border-radius: 10px;
+  border: 1px dashed var(--border2); background: transparent;
+  color: var(--text3); font-size: 18px; cursor: pointer;
+  transition: all var(--transition); font-family: 'DM Sans', sans-serif;
+  flex-shrink: 0; line-height: 1;
 }
-
 .new-proj-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(10,122,255,0.06); }
 
 .proj-tab-wrap {
-  display: flex; align-items: center; gap: 2px;
+  display: flex; align-items: center;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition: border-color var(--transition);
   position: relative;
 }
+.proj-tab-wrap:has(.proj-tab.active) { border-color: transparent; }
 
-.proj-del-btn {
-  width: 20px; height: 20px;
-  border-radius: 6px; border: none;
-  background: rgba(255,58,48,0.08);
-  color: var(--danger);
-  font-size: 10px; font-weight: 700;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: all var(--transition);
-  font-family: 'DM Sans', sans-serif;
-  opacity: 0.5;
+.proj-tab-actions {
+  display: flex; align-items: center; gap: 2px;
+  padding-right: 6px;
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--transition);
   flex-shrink: 0;
 }
+.proj-tab-wrap:hover .proj-tab-actions { opacity: 1; pointer-events: all; }
 
-.proj-tab-wrap:hover .proj-del-btn { opacity: 1; }
-.proj-del-btn:hover { background: rgba(255,58,48,0.2); color: var(--danger); transform: scale(1.1); opacity: 1; }
-
-.proj-rename-btn {
-  width: 20px; height: 20px;
-  border-radius: 6px; border: none;
-  background: rgba(255,255,255,0.05);
-  color: var(--text2);
-  font-size: 10px; cursor: pointer;
+.proj-tab-action-btn {
+  width: 18px; height: 18px; border-radius: 5px; border: none;
+  background: transparent; font-size: 10px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  transition: all var(--transition);
-  opacity: 0; padding: 0;
+  transition: background var(--transition); color: var(--text2); padding: 0;
 }
-.proj-tab-wrap:hover .proj-rename-btn { opacity: 1; }
-.proj-rename-btn:hover { background: rgba(255,255,255,0.12); transform: scale(1.1); }
+.proj-tab-action-btn:hover { background: rgba(255,255,255,0.12); }
+.proj-tab-action-btn.danger:hover { background: rgba(255,58,48,0.2); color: var(--danger); }
+.proj-tab.active + .proj-tab-actions .proj-tab-action-btn { color: rgba(255,255,255,0.7); }
+.proj-tab.active + .proj-tab-actions .proj-tab-action-btn:hover { background: rgba(255,255,255,0.15); color: white; }
+.proj-tab.active + .proj-tab-actions .proj-tab-action-btn.danger:hover { background: rgba(255,80,80,0.3); color: white; }
+
+
 
 .proj-more-btn {
   padding: 7px 12px;
@@ -574,18 +552,7 @@ input::placeholder { color: var(--text3); }
 .proj-dropdown-item:hover .proj-dd-actions { opacity: 1; }
 .proj-dd-actions button { width: 22px; height: 22px; border: none; background: var(--surface2); border-radius: 6px; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center; transition: background var(--transition); }
 
-.proj-share-btn {
-  width: 20px; height: 20px;
-  border-radius: 6px; border: none;
-  background: rgba(10,122,255,0.08);
-  color: var(--accent);
-  font-size: 10px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: all var(--transition);
-  opacity: 0; padding: 0;
-}
-.proj-tab-wrap:hover .proj-share-btn { opacity: 1; }
-.proj-share-btn:hover { background: rgba(10,122,255,0.2); transform: scale(1.1); }
+/* share btn handled by proj-tab-action-btn */
 
 /* TOOLBAR */
 .toolbar {
@@ -2094,28 +2061,32 @@ function renderProjects() {
     btn.innerHTML = `${esc(p.name)} <span class="tab-count">${items.length}</span>`;
     btn.onclick = () => { CP = p.id; renderProjects(); renderItems(); renderTags(); };
 
+    const actions = document.createElement('div');
+    actions.className = 'proj-tab-actions';
+
     const rename = document.createElement('button');
-    rename.className = 'proj-rename-btn';
-    rename.title = 'Rename project';
+    rename.className = 'proj-tab-action-btn';
+    rename.title = 'Rename';
     rename.textContent = '✏️';
     rename.onclick = (e) => { e.stopPropagation(); openRenameModal(p.id, p.name); };
 
     const share = document.createElement('button');
-    share.className = 'proj-share-btn';
-    share.title = 'Share project';
+    share.className = 'proj-tab-action-btn';
+    share.title = 'Share';
     share.textContent = '👥';
     share.onclick = (e) => { e.stopPropagation(); openShareModal(p.id, p.name); };
 
     const del = document.createElement('button');
-    del.className = 'proj-del-btn';
-    del.title = 'Delete project';
+    del.className = 'proj-tab-action-btn danger';
+    del.title = 'Delete';
     del.textContent = '✕';
     del.onclick = (e) => { e.stopPropagation(); deleteProject(p.id, p.name); };
 
+    actions.appendChild(rename);
+    actions.appendChild(share);
+    actions.appendChild(del);
     wrap.appendChild(btn);
-    wrap.appendChild(rename);
-    wrap.appendChild(share);
-    wrap.appendChild(del);
+    wrap.appendChild(actions);
     bar.appendChild(wrap);
   });
 
