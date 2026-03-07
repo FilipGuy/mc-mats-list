@@ -1733,23 +1733,26 @@ function getItems(pid) { return _items[pid] || []; }
 
 function saveItems(pid, items) {
   _items[pid] = items;
-  // delete all items for this project then re-insert
-  SB.from('items').delete().eq('project_id', pid).eq('user_id', CU.id).then(() => {
-    if (!items.length) return;
-    const rows = items.map(i => ({
-      id: i.id,
-      project_id: pid,
-      user_id: CU.id,
-      name: i.name,
-      amount: i.amount,
-      tag: i.tag || '',
-      priority: i.priority || 'none',
-      done: i.done || false,
-      item_order: i.order || 0
-    }));
-    SB.from('items').upsert(rows).then(({error}) => {
-      if (error) console.warn('items upsert:', error.message);
+  // upsert each item individually — works for both owner and member
+  if (!items.length) {
+    SB.from('items').delete().eq('project_id', pid).then(({error}) => {
+      if (error) console.warn('items delete:', error.message);
     });
+    return;
+  }
+  const rows = items.map(i => ({
+    id: i.id,
+    project_id: pid,
+    user_id: i.user_id || CU.id,
+    name: i.name,
+    amount: i.amount,
+    tag: i.tag || '',
+    priority: i.priority || 'none',
+    done: i.done || false,
+    item_order: i.order || 0
+  }));
+  SB.from('items').upsert(rows, { onConflict: 'id' }).then(({error}) => {
+    if (error) console.warn('items upsert:', error.message);
   });
 }
 
@@ -1757,7 +1760,9 @@ function getTags(pid) { return _tags[pid] || []; }
 
 function saveTags(pid, tags) {
   _tags[pid] = tags;
-  SB.from('tags').delete().eq('project_id', pid).eq('user_id', CU.id).then(() => {
+  const isShared = _projects.find(p => p.id === pid)?.name?.endsWith('(shared)');
+  if (isShared) return; // members cannot edit tags
+  SB.from('tags').delete().eq('project_id', pid).then(() => {
     if (!tags.length) return;
     const rows = tags.map(t => ({
       project_id: pid,
@@ -1929,8 +1934,22 @@ async function loadCloudData() {
   _tags = {};
   (tags || []).forEach(t => {
     if (!_tags[t.project_id]) _tags[t.project_id] = [];
-    _tags[t.project_id].push({ name: t.name, color: t.color });
+    if (!_tags[t.project_id].find(x => x.name === t.name)) {
+      _tags[t.project_id].push({ name: t.name, color: t.color });
+    }
   });
+
+  // load tags for shared projects
+  if (members && members.length > 0) {
+    const sharedIds = members.map(m => m.project_id);
+    const { data: sharedTags } = await SB.from('tags').select('*').in('project_id', sharedIds);
+    (sharedTags || []).forEach(t => {
+      if (!_tags[t.project_id]) _tags[t.project_id] = [];
+      if (!_tags[t.project_id].find(x => x.name === t.name)) {
+        _tags[t.project_id].push({ name: t.name, color: t.color });
+      }
+    });
+  }
 }
 
 /* ===== APP LOAD ===== */
@@ -2009,10 +2028,13 @@ let pendingDeleteName = '';
 
 function deleteProject(id, name) {
   const ps = getProjects();
-  if (ps.length === 1) { toast('Cannot delete the last project'); return; }
+  if (ps.length === 1) { toast('Cannot remove the last project'); return; }
   pendingDeleteId = id;
   pendingDeleteName = name;
-  document.getElementById('delProjMsg').textContent = `Delete "${name}" and all its items? This cannot be undone.`;
+  const isShared = _projects.find(p => p.id === id)?.name?.endsWith('(shared)');
+  document.getElementById('delProjMsg').textContent = isShared
+    ? `Leave "${name.replace(' (shared)', '')}"? You will lose access to this shared project.`
+    : `Delete "${name}" and all its items? This cannot be undone.`;
   document.getElementById('delProjModal').classList.add('open');
 }
 
@@ -2022,17 +2044,33 @@ function closeDelModal() {
   pendingDeleteName = '';
 }
 
-function confirmDeleteProject() {
+async function confirmDeleteProject() {
   if (!pendingDeleteId) return;
   const ps = getProjects();
-  const newPs = ps.filter(p => p.id !== pendingDeleteId);
-  saveProjects(newPs);
-  LS.rm(uKey('items_' + pendingDeleteId));
-  LS.rm(uKey('tags_' + pendingDeleteId));
-  if (CP === pendingDeleteId) CP = newPs[0].id;
+  const isShared = _projects.find(p => p.id === pendingDeleteId)?.name?.endsWith('(shared)');
+
+  if (isShared) {
+    // just leave the shared project — remove from local state and project_members
+    await SB.from('project_members').delete().eq('project_id', pendingDeleteId).eq('user_id', CU.id);
+    _projects = ps.filter(p => p.id !== pendingDeleteId);
+    delete _items[pendingDeleteId];
+    delete _tags[pendingDeleteId];
+  } else {
+    // owner deleting their own project — delete everything from Supabase
+    await SB.from('items').delete().eq('project_id', pendingDeleteId);
+    await SB.from('tags').delete().eq('project_id', pendingDeleteId);
+    await SB.from('project_members').delete().eq('project_id', pendingDeleteId);
+    await SB.from('invites').delete().eq('project_id', pendingDeleteId);
+    await SB.from('projects').delete().eq('id', pendingDeleteId);
+    _projects = ps.filter(p => p.id !== pendingDeleteId);
+    delete _items[pendingDeleteId];
+    delete _tags[pendingDeleteId];
+  }
+
+  if (CP === pendingDeleteId) CP = _projects[0]?.id;
   closeDelModal();
   renderProjects(); renderItems(); renderTags();
-  toast(`Deleted "${pendingDeleteName}"`);
+  toast(isShared ? `Left "${pendingDeleteName}"` : `Deleted "${pendingDeleteName}"`);
 }
 
 document.getElementById('delProjModal').addEventListener('click', e => {
