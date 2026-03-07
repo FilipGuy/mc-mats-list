@@ -1627,27 +1627,32 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 
 <div class="toast" id="toast"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 <script>
 /* ===== SUPABASE ===== */
-const _sbc = (window.supabase && window.supabase.createClient) ? window.supabase.createClient : window.Supabase?.createClient;
-if (!_sbc) { document.body.innerHTML = '<div style="color:red;padding:40px;font-size:18px;">Failed to load Supabase SDK. Check your internet connection and reload.</div>'; }
-const SB = _sbc(
-  'https://jhflvmhdhrrgkacpcbt.supabase.co',
-  'sb_publishable_n-eWkBoINXgD5-m8w69JVw_8AxNkkmp',
-  {
-    auth: {
-      storage: {
-        getItem: k => { try { return localStorage.getItem(k); } catch { return null; } },
-        setItem: (k, v) => { try { localStorage.setItem(k, v); } catch {} },
-        removeItem: k => { try { localStorage.removeItem(k); } catch {} }
-      },
-      persistSession: true,
-      autoRefreshToken: true
+let SB;
+try {
+  const _sbc = (window.supabase?.createClient) || (window.Supabase?.createClient);
+  SB = _sbc(
+    'https://jhflvmhdhrrgkacpcbt.supabase.co',
+    'sb_publishable_n-eWkBoINXgD5-m8w69JVw_8AxNkkmp',
+    {
+      auth: {
+        storage: {
+          getItem: k => { try { return localStorage.getItem(k); } catch { return null; } },
+          setItem: (k, v) => { try { localStorage.setItem(k, v); } catch {} },
+          removeItem: k => { try { localStorage.removeItem(k); } catch {} }
+        },
+        persistSession: true,
+        autoRefreshToken: true
+      }
     }
-  }
-);
+  );
+} catch(e) {
+  console.error('Supabase failed to init:', e);
+  SB = null;
+}
 
 /* ===== STATE ===== */
 let CU = null; // current user object {id, username}
@@ -1733,6 +1738,7 @@ async function doLogin() {
   const u=document.getElementById('lu').value.trim().toLowerCase();
   const p=document.getElementById('lp').value;
   if(!u||!p) { showErr('Fill in both fields.'); return; }
+  if(!SB) { showErr('Could not connect to server. Please reload the page.'); return; }
 
   const btn = document.getElementById('loginBtn');
   btn.disabled = true; btn.textContent = 'Signing in...';
@@ -1762,6 +1768,7 @@ async function doRegister() {
   if(u.length<3) { showErr('Username needs at least 3 characters.'); return; }
   if(p.length<6) { showErr('Password needs at least 6 characters.'); return; }
   if(p!==p2) { showErr('Passwords do not match.'); return; }
+  if(!SB) { showErr('Could not connect to server. Please reload the page.'); return; }
 
   const btn = document.getElementById('registerBtn');
   btn.disabled = true; btn.textContent = 'Creating account...';
@@ -3507,13 +3514,15 @@ window.onload = async () => {
     });
   } catch {}
 
-  const { data: { session } } = await SB.auth.getSession();
-  if (session) {
-    const { data: profile } = await SB.from('profiles').select('id,username').eq('id', session.user.id).single();
-    if (profile) {
-      CU = { id: profile.id, username: profile.username };
-      await loadCloudData();
-      loadApp();
+  if (SB) {
+    const { data: { session } } = await SB.auth.getSession();
+    if (session) {
+      const { data: profile } = await SB.from('profiles').select('id,username').eq('id', session.user.id).single();
+      if (profile) {
+        CU = { id: profile.id, username: profile.username };
+        await loadCloudData();
+        loadApp();
+      }
     }
   }
 
