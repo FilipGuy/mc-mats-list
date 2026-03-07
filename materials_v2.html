@@ -437,7 +437,7 @@ input::placeholder { color: var(--text3); }
 
 .proj-tab-wrap {
   position: relative;
-  display: flex; flex-direction: column;
+  display: flex; flex-direction: row; align-items: stretch;
   flex-shrink: 0;
 }
 
@@ -477,35 +477,34 @@ input::placeholder { color: var(--text3); }
 
 /* arrow chevron — always visible, opens action menu on click */
 .proj-tab-chevron {
-  width: 20px; height: 20px;
+  width: 20px;
   display: flex; align-items: center; justify-content: center;
   border-radius: 0 8px 8px 0;
-  border: none;
+  border: none; border-left: none;
   background: transparent;
   color: transparent;
-  font-size: 8px; cursor: pointer; padding: 0;
-  transition: background var(--transition), color var(--transition), transform var(--transition);
-  flex-shrink: 0;
-  margin-left: -4px;
+  font-size: 9px; cursor: pointer; padding: 0;
+  transition: background var(--transition), color var(--transition);
+  flex-shrink: 0; align-self: stretch;
 }
-.proj-tab-wrap:hover .proj-tab-chevron { color: var(--text3); background: var(--surface2); }
-.proj-tab-wrap:has(.proj-tab.active) .proj-tab-chevron { background: rgba(0,0,0,0.15); color: rgba(255,255,255,0.6); border-radius: 0 8px 8px 0; }
+.proj-tab-wrap:hover .proj-tab-chevron { color: var(--text3); background: rgba(255,255,255,0.06); }
+.proj-tab-wrap:has(.proj-tab.active) .proj-tab-chevron { background: rgba(0,0,0,0.15); color: rgba(255,255,255,0.5); }
 .proj-tab-wrap:has(.proj-tab.active) .proj-tab-chevron:hover { background: rgba(0,0,0,0.25); color: white; }
 .proj-tab-chevron:hover { color: var(--text) !important; }
-.proj-tab-chevron.open { color: var(--accent) !important; }
+.proj-tab-chevron.open { color: var(--accent) !important; background: rgba(10,122,255,0.1); }
 
 /* floating action menu under the tab */
 .proj-tab-menu {
   display: none;
   position: absolute;
-  top: calc(100% + 4px);
+  top: calc(100% + 6px);
   left: 0;
   z-index: 1001;
   background: var(--surface);
   border: 1px solid var(--border2);
   border-radius: 12px;
   padding: 5px;
-  min-width: 160px;
+  min-width: 150px;
   box-shadow: 0 8px 28px rgba(0,0,0,0.45);
   backdrop-filter: blur(20px);
 }
@@ -3301,10 +3300,10 @@ document.addEventListener('keydown', e=>{
 /* ===== BACKGROUND CUSTOMIZER ===== */
 
 const PRESETS = [
+  { name:'Midnight', dark:true,  bg:'linear-gradient(135deg,#0d1117 0%,#0f0d1a 50%,#0d1a1f 100%)', orbs:['rgba(10,122,255,0.2)','rgba(123,97,255,0.18)','rgba(42,199,105,0.12)','rgba(255,149,0,0.1)'] },
   { name:'Ocean',    dark:false, bg:'linear-gradient(135deg,#dce8f8 0%,#e4d8f5 50%,#d8eef2 100%)', orbs:['rgba(10,122,255,0.25)','rgba(123,97,255,0.2)','rgba(42,199,105,0.18)','rgba(255,149,0,0.15)'] },
   { name:'Sunset',   dark:false, bg:'linear-gradient(135deg,#fde8d8 0%,#f5d8e4 50%,#fce4c8 100%)', orbs:['rgba(255,100,50,0.28)','rgba(255,60,120,0.22)','rgba(255,180,50,0.2)','rgba(200,80,255,0.15)'] },
   { name:'Forest',   dark:false, bg:'linear-gradient(135deg,#d8f2e0 0%,#daf5d0 50%,#d0edd8 100%)', orbs:['rgba(30,180,80,0.28)','rgba(60,200,120,0.2)','rgba(100,220,80,0.18)','rgba(20,140,60,0.15)'] },
-  { name:'Midnight', dark:true,  bg:'linear-gradient(135deg,#0d1117 0%,#0f0d1a 50%,#0d1a1f 100%)', orbs:['rgba(10,122,255,0.2)','rgba(123,97,255,0.18)','rgba(42,199,105,0.12)','rgba(255,149,0,0.1)'] },
   { name:'Rose',     dark:false, bg:'linear-gradient(135deg,#fce4ec 0%,#f8d7e8 50%,#fde8f0 100%)', orbs:['rgba(240,80,130,0.28)','rgba(255,100,160,0.2)','rgba(200,60,200,0.18)','rgba(255,150,180,0.15)'] },
   { name:'Sand',     dark:false, bg:'linear-gradient(135deg,#fdf6e3 0%,#f5edcf 50%,#faf0d7 100%)', orbs:['rgba(210,160,50,0.28)','rgba(240,180,80,0.2)','rgba(200,140,40,0.18)','rgba(255,200,100,0.15)'] },
   { name:'Candy',    dark:false, bg:'linear-gradient(135deg,#e8f8ff 0%,#ffe8f8 50%,#f8ffe8 100%)', orbs:['rgba(0,180,255,0.22)','rgba(255,80,200,0.2)','rgba(100,220,100,0.18)','rgba(255,200,50,0.15)'] },
@@ -3334,7 +3333,7 @@ function setThemeMode(dark) {
 
 function buildPresets() {
   const grid = document.getElementById('presetsGrid');
-  const active = LS.get('ml_bg_preset') || 0;
+  const active = LS.get('ml_bg_preset') ?? 0;
   grid.innerHTML = '';
   PRESETS.forEach((p, i) => {
     const div = document.createElement('div');
@@ -3361,7 +3360,7 @@ function applyPreset(i) {
 }
 
 function applyBg() {
-  const presetIdx = LS.get('ml_bg_preset') ?? 3; // default to Midnight
+  const presetIdx = LS.get('ml_bg_preset') ?? 0; // default to Midnight
   const imgData   = LS.get('ml_bg_image');
   const blur      = LS.get('ml_bg_blur') ?? 0;
   const dim       = LS.get('ml_bg_dim')  ?? 0;
@@ -3482,7 +3481,7 @@ function updateDim(v) {
 
 function removeBg() {
   LS.rm('ml_bg_image'); LS.rm('ml_bg_blur'); LS.rm('ml_bg_dim'); LS.rm('ml_bg_image_dark');
-  LS.set('ml_bg_preset', 3); // Midnight preset
+  LS.set('ml_bg_preset', 0); // Midnight preset
   setThemeMode(true);
   document.getElementById('uploadPreview').style.display = 'none';
   document.getElementById('bgFileInput').value = '';
