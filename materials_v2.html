@@ -1627,11 +1627,13 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 
 <div class="toast" id="toast"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 <script>
 /* ===== SUPABASE ===== */
-const SB = supabase.createClient(
+const _sbc = (window.supabase && window.supabase.createClient) ? window.supabase.createClient : window.Supabase?.createClient;
+if (!_sbc) { document.body.innerHTML = '<div style="color:red;padding:40px;font-size:18px;">Failed to load Supabase SDK. Check your internet connection and reload.</div>'; }
+const SB = _sbc(
   'https://jhflvmhdhrrgkacpcbt.supabase.co',
   'sb_publishable_n-eWkBoINXgD5-m8w69JVw_8AxNkkmp'
 );
@@ -1721,19 +1723,24 @@ async function doLogin() {
   const p=document.getElementById('lp').value;
   if(!u||!p) { showErr('Fill in both fields.'); return; }
 
-  setBtnLoading('loginBtn', true);
-  // look up the profile by username to get email
-  const { data: profile, error: pErr } = await SB.from('profiles').select('id,username,email').eq('username', u).single();
-  if (pErr || !profile) { showErr('Username not found.'); setBtnLoading('loginBtn', false); return; }
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Signing in...';
 
-  const { data, error } = await SB.auth.signInWithPassword({ email: profile.email, password: p });
-  if (error) { showErr('Wrong password.'); setBtnLoading('loginBtn', false); return; }
+  try {
+    const { data: profile, error: pErr } = await SB.from('profiles').select('id,username,email').eq('username', u).single();
+    if (pErr || !profile) { showErr('Username not found.'); btn.disabled=false; btn.textContent='Sign In'; return; }
 
-  CU = { id: data.user.id, username: profile.username };
-  hideErr();
-  setBtnLoading('loginBtn', false);
-  await loadCloudData();
-  loadApp();
+    const { data, error } = await SB.auth.signInWithPassword({ email: profile.email, password: p });
+    if (error) { showErr('Wrong password.'); btn.disabled=false; btn.textContent='Sign In'; return; }
+
+    CU = { id: data.user.id, username: profile.username };
+    hideErr();
+    await loadCloudData();
+    loadApp();
+  } catch(e) {
+    showErr('Connection error. Check your internet and try again.');
+    btn.disabled=false; btn.textContent='Sign In';
+  }
 }
 
 async function doRegister() {
@@ -1745,29 +1752,31 @@ async function doRegister() {
   if(p.length<6) { showErr('Password needs at least 6 characters.'); return; }
   if(p!==p2) { showErr('Passwords do not match.'); return; }
 
-  // check username not taken
-  const { data: existing } = await SB.from('profiles').select('id').eq('username', u).single();
-  if (existing) { showErr('Username already taken.'); return; }
+  const btn = document.getElementById('registerBtn');
+  btn.disabled = true; btn.textContent = 'Creating account...';
 
-  setBtnLoading('registerBtn', true);
-  // use username@materials.app as fake email (Supabase needs email)
-  const fakeEmail = `${u}@mc-materials.app`;
-  const { data, error } = await SB.auth.signUp({ email: fakeEmail, password: p });
-  if (error) { showErr(error.message); setBtnLoading('registerBtn', false); return; }
+  try {
+    const { data: existing } = await SB.from('profiles').select('id').eq('username', u).single();
+    if (existing) { showErr('Username already taken.'); btn.disabled=false; btn.textContent='Create Account'; return; }
 
-  // save profile with username + email
-  await SB.from('profiles').insert({ id: data.user.id, username: u, email: fakeEmail });
+    const fakeEmail = `${u}@mc-materials.app`;
+    const { data, error } = await SB.auth.signUp({ email: fakeEmail, password: p });
+    if (error) { showErr(error.message); btn.disabled=false; btn.textContent='Create Account'; return; }
 
-  CU = { id: data.user.id, username: u };
-  // create default project
-  const defProject = { id: 'proj_default_' + data.user.id, name: 'General', color: 0 };
-  _projects = [defProject];
-  await SB.from('projects').insert({ id: defProject.id, user_id: CU.id, name: defProject.name, color: 0 });
+    await SB.from('profiles').insert({ id: data.user.id, username: u, email: fakeEmail });
 
-  hideErr();
-  setBtnLoading('registerBtn', false);
-  toast('Account created!');
-  loadApp();
+    CU = { id: data.user.id, username: u };
+    const defProject = { id: 'proj_default_' + data.user.id, name: 'General', color: 0 };
+    _projects = [defProject];
+    await SB.from('projects').insert({ id: defProject.id, user_id: CU.id, name: defProject.name, color: 0 });
+
+    hideErr();
+    toast('Account created!');
+    loadApp();
+  } catch(e) {
+    showErr('Connection error. Check your internet and try again.');
+    btn.disabled=false; btn.textContent='Create Account';
+  }
 }
 
 async function doLogout() {
