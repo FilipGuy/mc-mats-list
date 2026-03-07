@@ -1383,7 +1383,7 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
   <div id="loginForm">
     <div class="field"><label>Username</label><input type="text" id="lu" placeholder="Enter username" autocomplete="username"></div>
     <div class="field"><label>Password</label><input type="password" id="lp" placeholder="Enter password" autocomplete="current-password"></div>
-    <button class="btn" onclick="doLogin()">Sign In</button>
+    <button id="loginBtn" class="btn" onclick="doLogin()">Sign In</button>
     <div class="switch-link">No account? <span onclick="sw(1)">Create one</span></div>
   </div>
 
@@ -1391,7 +1391,7 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
     <div class="field"><label>Username</label><input type="text" id="ru" placeholder="Choose a username" autocomplete="username"></div>
     <div class="field"><label>Password</label><input type="password" id="rp" placeholder="At least 4 characters" autocomplete="new-password"></div>
     <div class="field"><label>Confirm password</label><input type="password" id="rp2" placeholder="Repeat password" autocomplete="new-password"></div>
-    <button class="btn" onclick="doRegister()">Create Account</button>
+    <button id="registerBtn" class="btn" onclick="doRegister()">Create Account</button>
     <div class="switch-link">Already have one? <span onclick="sw(0)">Sign in</span></div>
   </div>
 </div>
@@ -1456,7 +1456,7 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 
     <!-- ADD FORM -->
     <div class="add-form">
-      <div class="add-form-label">Add Item <button class="import-btn" onclick="openImportModal()" title="Import from Litematica">📂 Import Litematica</button></div>
+      <div class="add-form-label">Add Item <button class="import-btn" onclick="openImportModal()" title="Import Schematic">📂 Import Schematic</button></div>
       <div class="add-row">
         <div class="add-field"><input type="text" id="iName" placeholder="Item name" onkeydown="ek(event)"></div>
         <div class="add-field xs"><input type="text" id="iAmt" placeholder="Qty" onkeydown="ek(event)"></div>
@@ -1554,18 +1554,18 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 <!-- IMPORT MODAL -->
 <div class="bg-modal-backdrop" id="importModal">
   <div class="bg-modal" style="max-width:480px;">
-    <h3>Import Litematica <button class="bg-modal-close" onclick="closeImportModal()">✕</button></h3>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6;">Paste your Litematica material list text below, or upload the .txt file directly. Items already in the list will be skipped.</p>
+    <h3>Import Schematic <button class="bg-modal-close" onclick="closeImportModal()">✕</button></h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6;">Upload a <strong style="color:var(--text)">.litematic</strong> file directly, or paste a Litematica material list text. Items already in the list will be skipped.</p>
 
     <div class="upload-zone" style="margin-bottom:12px;" id="importDropZone">
-      <input type="file" id="importFileInput" accept=".txt,text/plain" onchange="handleImportFile(event)">
-      <div class="upload-icon">📄</div>
-      <p>Click or drop .txt file here</p>
-      <small>From Litematica material list export</small>
+      <input type="file" id="importFileInput" accept=".litematic,.schem,.schematic,.txt,text/plain" onchange="handleImportFile(event)">
+      <div class="upload-icon">📦</div>
+      <p>Click or drop schematic file here</p>
+      <small>Supports .litematic, .schem, .schematic, and .txt</small>
     </div>
 
-    <div class="bg-section-title">Or paste text</div>
-    <textarea id="importTextarea" placeholder="Paste the Litematica table here..." style="width:100%;height:160px;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:12px;font-size:12px;font-family:'DM Mono',monospace;color:var(--text);resize:vertical;outline:none;line-height:1.6;"></textarea>
+    <div class="bg-section-title">Or paste material list text</div>
+    <textarea id="importTextarea" placeholder="Paste the Litematica table here..." style="width:100%;height:120px;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:12px;font-size:12px;font-family:'DM Mono',monospace;color:var(--text);resize:vertical;outline:none;line-height:1.6;"></textarea>
 
     <div id="importPreview" style="display:none;margin-top:12px;">
       <div class="bg-section-title">Found items</div>
@@ -1627,69 +1627,164 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 <script>
+/* ===== SUPABASE ===== */
+const SB = supabase.createClient(
+  'https://jhflvmhdhrrgkacpcbt.supabase.co',
+  'sb_publishable_n-eWkBoINXgD5-m8w69JVw_8AxNkkmp'
+);
+
 /* ===== STATE ===== */
-let CU = null; // current user
+let CU = null; // current user object {id, username}
 let CP = null; // current project id
 let dragSrc = null;
 let activeFilter = 'all';
 let selectedTag = null;
 
-/* ===== STORAGE HELPERS ===== */
+// in-memory cache so UI stays snappy
+let _projects = [];
+let _items = {};   // pid -> []
+let _tags   = {};  // pid -> []
+
+/* ===== LOCAL STORAGE (theme/bg only) ===== */
 const LS = {
   get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
   set: (k, v) => localStorage.setItem(k, JSON.stringify(v)),
   rm: k => localStorage.removeItem(k)
 };
 
-function users() { return LS.get('ml_users') || {}; }
-function saveUsers(u) { LS.set('ml_users', u); }
-function hash(p) { let h=0; for(let c of p) h=((h<<5)-h)+c.charCodeAt(0)|0; return h.toString(36); }
+/* ===== DATA HELPERS ===== */
+function getProjects() { return _projects.length ? _projects : [{ id: 'default', name: 'General', color: 0 }]; }
 
-function uKey(sub) { return `ml_${CU}_${sub}`; }
-function getProjects() { return LS.get(uKey('projects')) || [{ id: 'default', name: 'General', color: 0 }]; }
-function saveProjects(ps) { LS.set(uKey('projects'), ps); }
-function getItems(pid) { return LS.get(uKey('items_'+pid)) || []; }
-function saveItems(pid, items) { LS.set(uKey('items_'+pid), items); }
-function getTags(pid) { return LS.get(uKey('tags_'+pid)) || []; }
-function saveTags(pid, tags) { LS.set(uKey('tags_'+pid), tags); }
-
-function goHome() {
-  window.location.href = 'index.html';
+function saveProjects(ps) {
+  _projects = ps;
+  // sync each project to supabase (upsert)
+  ps.forEach(p => {
+    SB.from('projects').upsert({ id: p.id, user_id: CU.id, name: p.name, color: p.color || 0 }).then(({error}) => {
+      if (error) console.warn('project upsert:', error.message);
+    });
+  });
 }
+
+function getItems(pid) { return _items[pid] || []; }
+
+function saveItems(pid, items) {
+  _items[pid] = items;
+  // delete all items for this project then re-insert
+  SB.from('items').delete().eq('project_id', pid).eq('user_id', CU.id).then(() => {
+    if (!items.length) return;
+    const rows = items.map(i => ({
+      id: i.id,
+      project_id: pid,
+      user_id: CU.id,
+      name: i.name,
+      amount: i.amount,
+      tag: i.tag || '',
+      priority: i.priority || 'none',
+      done: i.done || false,
+      item_order: i.order || 0
+    }));
+    SB.from('items').upsert(rows).then(({error}) => {
+      if (error) console.warn('items upsert:', error.message);
+    });
+  });
+}
+
+function getTags(pid) { return _tags[pid] || []; }
+
+function saveTags(pid, tags) {
+  _tags[pid] = tags;
+  SB.from('tags').delete().eq('project_id', pid).eq('user_id', CU.id).then(() => {
+    if (!tags.length) return;
+    const rows = tags.map(t => ({
+      project_id: pid,
+      user_id: CU.id,
+      name: t.name,
+      color: t.color || 0
+    }));
+    SB.from('tags').insert(rows).then(({error}) => {
+      if (error) console.warn('tags insert:', error.message);
+    });
+  });
+}
+
+function goHome() { window.location.href = 'index.html'; }
 
 /* ===== AUTH ===== */
 function showErr(m) { const e=document.getElementById('loginError'); e.textContent=m; e.style.display='block'; }
 function hideErr() { document.getElementById('loginError').style.display='none'; }
 
-function doLogin() {
-  const u=document.getElementById('lu').value.trim(), p=document.getElementById('lp').value;
+async function doLogin() {
+  const u=document.getElementById('lu').value.trim().toLowerCase();
+  const p=document.getElementById('lp').value;
   if(!u||!p) { showErr('Fill in both fields.'); return; }
-  const us=users();
-  if(!us[u]) { showErr('Username not found.'); return; }
-  if(us[u]!==hash(p)) { showErr('Wrong password.'); return; }
-  hideErr(); CU=u; LS.set('ml_session',u); loadApp();
+
+  setBtnLoading('loginBtn', true);
+  // look up the profile by username to get email
+  const { data: profile, error: pErr } = await SB.from('profiles').select('id,username,email').eq('username', u).single();
+  if (pErr || !profile) { showErr('Username not found.'); setBtnLoading('loginBtn', false); return; }
+
+  const { data, error } = await SB.auth.signInWithPassword({ email: profile.email, password: p });
+  if (error) { showErr('Wrong password.'); setBtnLoading('loginBtn', false); return; }
+
+  CU = { id: data.user.id, username: profile.username };
+  hideErr();
+  setBtnLoading('loginBtn', false);
+  await loadCloudData();
+  loadApp();
 }
 
-function doRegister() {
-  const u=document.getElementById('ru').value.trim(), p=document.getElementById('rp').value, p2=document.getElementById('rp2').value;
+async function doRegister() {
+  const u=document.getElementById('ru').value.trim().toLowerCase();
+  const p=document.getElementById('rp').value;
+  const p2=document.getElementById('rp2').value;
   if(!u||!p) { showErr('Fill in all fields.'); return; }
   if(u.length<3) { showErr('Username needs at least 3 characters.'); return; }
-  if(p.length<4) { showErr('Password needs at least 4 characters.'); return; }
+  if(p.length<6) { showErr('Password needs at least 6 characters.'); return; }
   if(p!==p2) { showErr('Passwords do not match.'); return; }
-  const us=users();
-  if(us[u]) { showErr('Username already taken.'); return; }
-  us[u]=hash(p); saveUsers(us);
-  hideErr(); CU=u; LS.set('ml_session',u);
-  toast('Account created!'); loadApp();
+
+  // check username not taken
+  const { data: existing } = await SB.from('profiles').select('id').eq('username', u).single();
+  if (existing) { showErr('Username already taken.'); return; }
+
+  setBtnLoading('registerBtn', true);
+  // use username@materials.app as fake email (Supabase needs email)
+  const fakeEmail = `${u}@mc-materials.app`;
+  const { data, error } = await SB.auth.signUp({ email: fakeEmail, password: p });
+  if (error) { showErr(error.message); setBtnLoading('registerBtn', false); return; }
+
+  // save profile with username + email
+  await SB.from('profiles').insert({ id: data.user.id, username: u, email: fakeEmail });
+
+  CU = { id: data.user.id, username: u };
+  // create default project
+  const defProject = { id: 'proj_default_' + data.user.id, name: 'General', color: 0 };
+  _projects = [defProject];
+  await SB.from('projects').insert({ id: defProject.id, user_id: CU.id, name: defProject.name, color: 0 });
+
+  hideErr();
+  setBtnLoading('registerBtn', false);
+  toast('Account created!');
+  loadApp();
 }
 
-function doLogout() {
-  CU=null; CP=null; LS.rm('ml_session');
+async function doLogout() {
+  await SB.auth.signOut();
+  CU=null; CP=null;
+  _projects=[]; _items={}; _tags={};
   document.getElementById('appScreen').style.display='none';
   document.getElementById('loginScreen').style.display='block';
   document.getElementById('lu').value=''; document.getElementById('lp').value='';
   sw(0);
+}
+
+function setBtnLoading(id, loading) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.style.opacity = loading ? '0.6' : '1';
 }
 
 function sw(reg) {
@@ -1699,11 +1794,44 @@ function sw(reg) {
   document.getElementById('brandSub').textContent=reg?'Create your account':'Sign in to your workspace';
 }
 
+/* ===== LOAD CLOUD DATA ===== */
+async function loadCloudData() {
+  const uid = CU.id;
+
+  const [{ data: projects }, { data: items }, { data: tags }] = await Promise.all([
+    SB.from('projects').select('*').eq('user_id', uid).order('created_at'),
+    SB.from('items').select('*').eq('user_id', uid).order('item_order'),
+    SB.from('tags').select('*').eq('user_id', uid)
+  ]);
+
+  _projects = (projects || []).map(p => ({ id: p.id, name: p.name, color: p.color }));
+  if (!_projects.length) {
+    const defProject = { id: 'proj_default_' + uid, name: 'General', color: 0 };
+    _projects = [defProject];
+    await SB.from('projects').insert({ id: defProject.id, user_id: uid, name: defProject.name, color: 0 });
+  }
+
+  _items = {};
+  (items || []).forEach(i => {
+    if (!_items[i.project_id]) _items[i.project_id] = [];
+    _items[i.project_id].push({
+      id: i.id, name: i.name, amount: i.amount,
+      tag: i.tag, priority: i.priority, done: i.done, order: i.item_order
+    });
+  });
+
+  _tags = {};
+  (tags || []).forEach(t => {
+    if (!_tags[t.project_id]) _tags[t.project_id] = [];
+    _tags[t.project_id].push({ name: t.name, color: t.color });
+  });
+}
+
 /* ===== APP LOAD ===== */
 function loadApp() {
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('appScreen').style.display='block';
-  document.getElementById('navSub').textContent='Hey, '+CU;
+  document.getElementById('navSub').textContent='Hey, '+CU.username;
   const ps=getProjects();
   CP=ps[0].id;
   renderProjects();
@@ -1965,7 +2093,306 @@ function parseLitematica(text) {
   return results;
 }
 
-function openImportModal() {
+function parseLitematicBinary(bytes, filename) {
+  // Extract schematic name from filename
+  importSchematicName = filename.replace('.litematic', '').replace(/_/g, ' ');
+
+  // Scan NBT bytes for minecraft: block name strings
+  // NBT string tag = type 8 (0x08), 2 byte big-endian length, then UTF-8 string
+  const blockCounts = {};
+  let i = 0;
+
+  // Also try to find the Name tag in Metadata
+  let foundName = false;
+
+  while (i < bytes.length - 4) {
+    // Look for "minecraft:" pattern directly in bytes
+    if (bytes[i] === 0x6d && bytes[i+1] === 0x69 && bytes[i+2] === 0x6e &&
+        bytes[i+3] === 0x65 && bytes[i+4] === 0x63) {
+      // Found "minec" — try to read full minecraft:block_name
+      let j = i;
+      let name = '';
+      while (j < bytes.length && bytes[j] >= 0x20 && bytes[j] <= 0x7e) {
+        name += String.fromCharCode(bytes[j]);
+        j++;
+      }
+      if (name.startsWith('minecraft:') && name.length > 10) {
+        const block = name.slice(10); // strip "minecraft:"
+        if (block !== 'air') {
+          blockCounts[block] = (blockCounts[block] || 0) + 1;
+        }
+      }
+      i = j;
+      continue;
+    }
+
+    // Try to find metadata Name string (short NBT string before "Unnamed" or actual name)
+    // Look for NBT string pattern: 08 00 04 N a m e  followed by 00 XX <string>
+    if (!foundName && bytes[i] === 0x08 && bytes[i+1] === 0x00 && bytes[i+2] === 0x04 &&
+        bytes[i+3] === 0x4e && bytes[i+4] === 0x61 && bytes[i+5] === 0x6d && bytes[i+6] === 0x65) {
+      // Read the string value after "Name" tag: 2 byte length then string
+      const len = (bytes[i+7] << 8) | bytes[i+8];
+      if (len > 0 && len < 200) {
+        let nameStr = '';
+        for (let k = 0; k < len; k++) nameStr += String.fromCharCode(bytes[i+9+k]);
+        if (nameStr && nameStr !== 'Unnamed' && !nameStr.startsWith('minecraft:')) {
+          importSchematicName = nameStr;
+          foundName = true;
+        }
+      }
+    }
+
+    i++;
+  }
+
+  if (Object.keys(blockCounts).length === 0) {
+    document.getElementById('importError').textContent = 'Could not find any blocks in this schematic file.';
+    document.getElementById('importError').style.display = 'block';
+    return;
+  }
+
+  // Convert block names to readable item names and build results
+  importParsed = Object.entries(blockCounts)
+    .filter(([block]) => block !== 'air')
+    .map(([block, count]) => ({
+      name: blockNameToItem(block),
+      amount: String(count)
+    }))
+    .filter(item => item.name);
+
+  showImportPreview(importParsed);
+}
+
+function blockNameToItem(block) {
+  // Convert minecraft snake_case block name to Title Case item name
+  // Handle special cases
+  const special = {
+    'redstone_wire': 'Redstone Dust',
+    'piston_head': null, // skip — not a real item
+    'moving_piston': null,
+    'soul_fire': null,
+    'fire': null,
+    'water': null,
+    'lava': null,
+    'bubble_column': null,
+    'void_air': null,
+    'cave_air': null,
+    'tall_grass': 'Tall Grass',
+    'large_fern': 'Large Fern',
+    'snow': 'Snow',
+    'redstone_wall_torch': 'Redstone Torch',
+    'redstone_torch': 'Redstone Torch',
+    'wall_torch': 'Torch',
+    'hopper_minecart': 'Hopper Minecart',
+    'chest_minecart': 'Chest Minecart',
+    'furnace_minecart': 'Furnace Minecart',
+    'tnt_minecart': 'TNT Minecart',
+    'wither_skeleton_wall_skull': 'Wither Skeleton Skull',
+    'skeleton_wall_skull': 'Skeleton Skull',
+    'zombie_wall_head': 'Zombie Head',
+    'player_wall_head': 'Player Head',
+    'creeper_wall_head': 'Creeper Head',
+    'dragon_wall_head': 'Dragon Head',
+    'piglin_wall_head': 'Piglin Head',
+    'lava_cauldron': 'Cauldron',
+    'water_cauldron': 'Cauldron',
+    'powder_snow_cauldron': 'Cauldron',
+    'attached_melon_stem': 'Melon Seeds',
+    'attached_pumpkin_stem': 'Pumpkin Seeds',
+    'melon_stem': 'Melon Seeds',
+    'pumpkin_stem': 'Pumpkin Seeds',
+    'wheat': 'Wheat Seeds',
+    'carrots': 'Carrot',
+    'potatoes': 'Potato',
+    'beetroots': 'Beetroot Seeds',
+    'sweet_berry_bush': 'Sweet Berries',
+    'nether_wart': 'Nether Wart',
+    'cocoa': 'Cocoa Beans',
+    'tripwire': 'String',
+    'frosted_ice': 'Ice',
+    'generic': null,
+  };
+  if (block in special) return special[block];
+
+  // Strip directional/state suffixes that dont change item name
+  // e.g. oak_log[axis=y] — but our scanner already strips after non-ascii
+  return block
+    .split('_')
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+function parseSchemBinary(bytes, filename) {
+  // .schem format (Sponge schematic) — has a Palette compound with minecraft:block_name keys
+  // Block names appear directly as minecraft: strings in the palette
+  importSchematicName = filename.replace(/\.schem$/i, '').replace(/_/g, ' ');
+
+  const blockCounts = {};
+  let i = 0;
+  while (i < bytes.length - 12) {
+    if (bytes[i] === 0x6d && bytes[i+1] === 0x69 && bytes[i+2] === 0x6e &&
+        bytes[i+3] === 0x65 && bytes[i+4] === 0x63) {
+      let j = i, name = '';
+      while (j < bytes.length && bytes[j] >= 0x20 && bytes[j] <= 0x7e) {
+        name += String.fromCharCode(bytes[j]); j++;
+      }
+      if (name.startsWith('minecraft:') && name.length > 10) {
+        // strip block state properties like [facing=east,...]
+        const block = name.slice(10).replace(/\[.*$/, '');
+        if (block && block !== 'air') {
+          blockCounts[block] = (blockCounts[block] || 0) + 1;
+        }
+      }
+      i = j; continue;
+    }
+    i++;
+  }
+
+  if (Object.keys(blockCounts).length === 0) {
+    document.getElementById('importError').textContent = 'Could not find any blocks in this .schem file.';
+    document.getElementById('importError').style.display = 'block';
+    return;
+  }
+
+  importParsed = Object.entries(blockCounts)
+    .map(([block, count]) => ({ name: blockNameToItem(block), amount: String(count) }))
+    .filter(i => i.name);
+
+  showImportPreview(importParsed);
+}
+
+function parseSchematicBinary(bytes, filename) {
+  // Old MCEdit .schematic format — uses numeric block IDs in a byte array
+  importSchematicName = filename.replace(/\.schematic$/i, '').replace(/[-_]/g, ' ');
+
+  const LEGACY_BLOCKS = {
+    1:'Stone',2:'Grass Block',3:'Dirt',4:'Cobblestone',5:'Oak Planks',
+    7:'Bedrock',12:'Sand',13:'Gravel',14:'Gold Ore',15:'Iron Ore',16:'Coal Ore',
+    17:'Oak Log',18:'Oak Leaves',20:'Glass',21:'Lapis Ore',22:'Lapis Block',
+    23:'Dispenser',24:'Sandstone',25:'Note Block',27:'Powered Rail',
+    28:'Detector Rail',29:'Sticky Piston',30:'Cobweb',33:'Piston',
+    35:'Wool',37:'Dandelion',38:'Poppy',39:'Brown Mushroom',40:'Red Mushroom',
+    41:'Gold Block',42:'Iron Block',44:'Stone Slab',45:'Bricks',46:'TNT',
+    47:'Bookshelf',48:'Mossy Cobblestone',49:'Obsidian',50:'Torch',
+    52:'Monster Spawner',53:'Oak Stairs',54:'Chest',55:'Redstone Dust',
+    56:'Diamond Ore',57:'Diamond Block',58:'Crafting Table',61:'Furnace',
+    64:'Oak Door',65:'Ladder',66:'Rail',67:'Stone Stairs',69:'Lever',
+    70:'Stone Pressure Plate',71:'Iron Door',73:'Redstone Ore',
+    76:'Redstone Torch',77:'Stone Button',78:'Snow',79:'Ice',80:'Snow Block',
+    81:'Cactus',82:'Clay',83:'Sugar Cane',84:'Jukebox',85:'Oak Fence',
+    86:'Pumpkin',87:'Netherrack',88:'Soul Sand',89:'Glowstone',
+    91:'Jack o Lantern',92:'Cake',95:'Stained Glass',96:'Trapdoor',
+    98:'Stone Bricks',99:'Brown Mushroom Block',100:'Red Mushroom Block',
+    101:'Iron Bars',102:'Glass Pane',103:'Melon',106:'Vines',
+    107:'Oak Fence Gate',108:'Brick Stairs',109:'Stone Brick Stairs',
+    110:'Mycelium',111:'Lily Pad',112:'Nether Bricks',113:'Nether Brick Fence',
+    114:'Nether Brick Stairs',115:'Nether Wart',116:'Enchanting Table',
+    117:'Brewing Stand',121:'End Stone',123:'Redstone Lamp',
+    126:'Wood Slab',127:'Cocoa',128:'Sandstone Stairs',129:'Emerald Ore',
+    130:'Ender Chest',131:'Tripwire Hook',133:'Emerald Block',134:'Spruce Stairs',
+    135:'Birch Stairs',136:'Jungle Stairs',138:'Beacon',139:'Cobblestone Wall',
+    143:'Wooden Button',145:'Anvil',146:'Trapped Chest',149:'Redstone Comparator',
+    151:'Daylight Detector',152:'Redstone Block',154:'Hopper',155:'Quartz Block',
+    156:'Quartz Stairs',157:'Activator Rail',158:'Dropper',159:'Terracotta',
+    161:'Acacia Leaves',162:'Acacia Log',163:'Acacia Stairs',164:'Dark Oak Stairs',
+    165:'Slime Block',167:'Iron Trapdoor',168:'Prismarine',169:'Sea Lantern',
+    170:'Hay Bale',171:'Carpet',173:'Coal Block',174:'Packed Ice',
+    179:'Red Sandstone',180:'Red Sandstone Stairs',183:'Spruce Fence Gate',
+    184:'Birch Fence Gate',185:'Jungle Fence Gate',186:'Dark Oak Fence Gate',
+    187:'Acacia Fence Gate',188:'Spruce Fence',189:'Birch Fence',
+    190:'Jungle Fence',191:'Dark Oak Fence',192:'Acacia Fence',
+    193:'Spruce Door',194:'Birch Door',195:'Jungle Door',196:'Acacia Door',
+    197:'Dark Oak Door',198:'End Rod',201:'Purpur Block',202:'Purpur Pillar',
+    203:'Purpur Stairs',206:'End Stone Bricks',213:'Magma Block',
+    214:'Nether Wart Block',215:'Red Nether Bricks',216:'Bone Block',
+  };
+
+  // Find NBT byte array tag named "Blocks"
+  let blocksData = null;
+  for (let i = 0; i < bytes.length - 12; i++) {
+    if (bytes[i] === 0x07 && bytes[i+1] === 0x00 && bytes[i+2] === 0x06 &&
+        bytes[i+3] === 0x42 && bytes[i+4] === 0x6c && bytes[i+5] === 0x6f &&
+        bytes[i+6] === 0x63 && bytes[i+7] === 0x6b && bytes[i+8] === 0x73) {
+      const len = (bytes[i+9] << 24) | (bytes[i+10] << 16) | (bytes[i+11] << 8) | bytes[i+12];
+      if (len > 0 && len < bytes.length) {
+        blocksData = bytes.slice(i+13, i+13+len);
+        break;
+      }
+    }
+  }
+
+  if (!blocksData) {
+    document.getElementById('importError').textContent = 'Could not find block data in this .schematic file.';
+    document.getElementById('importError').style.display = 'block';
+    return;
+  }
+
+  const counts = {};
+  for (let i = 0; i < blocksData.length; i++) {
+    const id = blocksData[i];
+    if (id !== 0) counts[id] = (counts[id] || 0) + 1;
+  }
+
+  importParsed = Object.entries(counts)
+    .map(([id, count]) => {
+      const name = LEGACY_BLOCKS[parseInt(id)];
+      return name ? { name, amount: String(count) } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => parseInt(b.amount) - parseInt(a.amount));
+
+  if (importParsed.length === 0) {
+    document.getElementById('importError').textContent = 'No recognizable blocks found in this schematic.';
+    document.getElementById('importError').style.display = 'block';
+    return;
+  }
+
+  showImportPreview(importParsed);
+}
+
+
+  const errEl = document.getElementById('importError');
+  const previewEl = document.getElementById('importPreview');
+  const listEl = document.getElementById('importPreviewList');
+  const confirmBtn = document.getElementById('importConfirmBtn');
+
+  errEl.style.display = 'none';
+  listEl.innerHTML = '';
+
+  if (!parsed || parsed.length === 0) {
+    errEl.textContent = 'No items found in this file.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const existingItems = getItems(CP).map(i => i.name.toLowerCase());
+
+  parsed.forEach(item => {
+    const alreadyExists = existingItems.includes(item.name.toLowerCase());
+    const tag = autoTag(item.name);
+    const div = document.createElement('div');
+    div.className = 'import-preview-item';
+    div.innerHTML = `
+      <span class="ip-name">${esc(item.name)}</span>
+      ${tag ? `<span class="ip-tag tc${Object.keys(MC_TAGS).indexOf(tag) % 6}">${esc(tag)}</span>` : ''}
+      <span class="ip-qty">×${item.amount}</span>
+      ${alreadyExists ? '<span class="ip-skip">already in list</span>' : ''}
+    `;
+    if (alreadyExists) div.style.opacity = '0.45';
+    listEl.appendChild(div);
+  });
+
+  previewEl.style.display = 'block';
+  const newCount = parsed.filter(i => !existingItems.includes(i.name.toLowerCase())).length;
+  confirmBtn.textContent = `Add ${newCount} Item${newCount !== 1 ? 's' : ''}`;
+  confirmBtn.style.display = newCount > 0 ? 'block' : 'none';
+  if (newCount === 0) {
+    errEl.textContent = 'All items from this list are already in your project.';
+    errEl.style.display = 'block';
+  }
+}
+
+
   importParsed = [];
   document.getElementById('importTextarea').value = '';
   document.getElementById('importPreview').style.display = 'none';
@@ -1987,12 +2414,35 @@ document.getElementById('importModal').addEventListener('click', e => {
 function handleImportFile(e) {
   const file = e.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    document.getElementById('importTextarea').value = ev.target.result;
-    processImportText(ev.target.result);
-  };
-  reader.readAsText(file);
+  const name = file.name.toLowerCase();
+
+  if (name.endsWith('.litematic') || name.endsWith('.schem') || name.endsWith('.schematic')) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const compressed = new Uint8Array(ev.target.result);
+        const decompressed = pako.inflate(compressed);
+        if (name.endsWith('.litematic')) {
+          parseLitematicBinary(decompressed, file.name);
+        } else if (name.endsWith('.schem')) {
+          parseSchemBinary(decompressed, file.name);
+        } else {
+          parseSchematicBinary(decompressed, file.name);
+        }
+      } catch(err) {
+        document.getElementById('importError').textContent = 'Could not read file: ' + err.message;
+        document.getElementById('importError').style.display = 'block';
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      document.getElementById('importTextarea').value = ev.target.result;
+      processImportText(ev.target.result);
+    };
+    reader.readAsText(file);
+  }
 }
 
 document.getElementById('importTextarea').addEventListener('input', function() {
@@ -2389,7 +2839,7 @@ function openCraftModal(name, totalQty) {
     const stacks = Math.floor(needed / 64);
     const rem = needed % 64;
     let stackStr = '';
-    if (stacks > 0 && rem > 0) stackStr = `<span style="font-size:10px;color:var(--text3);margin-left:4px;">(${stacks} stack${stacks>1?'s':''} and ${rem} item${rem>1?'s':''})</span>`;
+    if (stacks > 0 && rem > 0) stackStr = `<span style="font-size:10px;color:var(--text3);margin-left:4px;">(${stacks}s +${rem})</span>`;
     else if (stacks > 0) stackStr = `<span style="font-size:10px;color:var(--text3);margin-left:4px;">(${stacks} stack${stacks>1?'s':''})</span>`;
     return `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;">
@@ -3022,13 +3472,20 @@ document.querySelectorAll('.btn, .add-go-btn').forEach(magneticHover);
 })();
 
 /* ===== AUTO SESSION ===== */
-window.onload=()=>{
-  const s=LS.get('ml_session'), us=users();
-  if(s&&us[s]) { CU=s; loadApp(); }
+window.onload = async () => {
   applyTheme();
   applyBg();
 
-  // setup glow on card after potential show
+  const { data: { session } } = await SB.auth.getSession();
+  if (session) {
+    const { data: profile } = await SB.from('profiles').select('id,username').eq('id', session.user.id).single();
+    if (profile) {
+      CU = { id: profile.id, username: profile.username };
+      await loadCloudData();
+      loadApp();
+    }
+  }
+
   setTimeout(()=>{
     const card = document.querySelector('#appScreen .card');
     if(card) {
