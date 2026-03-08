@@ -717,15 +717,13 @@ input::placeholder { color: var(--text3); }
 /* SEARCH BAR */
 .search-bar-wrap {
   padding: 10px 26px 0;
-  position: relative;
-  display: flex; align-items: center;
 }
 .search-bar-input {
   width: 100%; box-sizing: border-box;
   background: var(--surface2);
   border: 1px solid var(--border2);
   border-radius: 11px;
-  padding: 9px 36px 9px 36px;
+  padding: 9px 14px;
   font-size: 13px; color: var(--text);
   font-family: 'DM Sans', sans-serif;
   outline: none;
@@ -733,111 +731,10 @@ input::placeholder { color: var(--text3); }
 }
 .search-bar-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(10,122,255,0.15); }
 .search-bar-input::placeholder { color: var(--text3); }
-.search-bar-icon {
-  position: absolute; left: 40px;
-  color: var(--text3); pointer-events: none;
-  display: flex; align-items: center;
-}
-.search-bar-icon svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
 .search-bar-clear {
-  position: absolute; right: 40px;
-  background: var(--surface2); border: none; border-radius: 50%;
-  width: 18px; height: 18px; font-size: 10px; cursor: pointer;
-  color: var(--text3); display: none; align-items: center; justify-content: center;
-  transition: all 0.2s;
+  display: none;
 }
-.search-bar-clear.visible { display: flex; }
-.search-bar-clear:hover { background: var(--danger); color: white; }
 
-/* CELEBRATION OVERLAY */
-@keyframes celebrationFadeIn {
-  from { opacity: 0; transform: scale(0.92); }
-  to   { opacity: 1; transform: scale(1); }
-}
-@keyframes celebrationFadeOut {
-  from { opacity: 1; transform: scale(1); }
-  to   { opacity: 0; transform: scale(1.05); }
-}
-@keyframes confettiDrop {
-  0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
-  100% { transform: translateY(120px) rotate(720deg); opacity: 0; }
-}
-@keyframes celebPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.06); }
-}
-@keyframes celebShimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position: 200% center; }
-}
-.celebration-overlay {
-  position: fixed; inset: 0; z-index: 10000;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(0,0,0,0.7);
-  backdrop-filter: blur(12px);
-  animation: celebrationFadeIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
-}
-.celebration-overlay.hiding {
-  animation: celebrationFadeOut 0.4s ease-in forwards;
-}
-.celebration-card {
-  background: linear-gradient(145deg, #0d1a2e, #0f1420);
-  border: 1px solid rgba(42,199,105,0.4);
-  border-radius: 28px;
-  padding: 48px 52px;
-  text-align: center;
-  box-shadow: 0 0 80px rgba(42,199,105,0.25), 0 24px 60px rgba(0,0,0,0.6);
-  animation: celebPulse 2.5s ease-in-out infinite;
-  position: relative; overflow: visible; max-width: 340px;
-}
-.celebration-card::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(90deg, transparent 0%, rgba(42,199,105,0.06) 50%, transparent 100%);
-  background-size: 200% 100%;
-  animation: celebShimmer 2s linear infinite;
-}
-.celebration-icon {
-  font-size: 64px; margin-bottom: 16px;
-  animation: celebPulse 1.5s ease-in-out infinite;
-  display: block;
-}
-.celebration-title {
-  font-size: 26px; font-weight: 800; color: white;
-  margin-bottom: 8px; letter-spacing: -0.5px;
-}
-.celebration-subtitle {
-  font-size: 14px; color: rgba(255,255,255,0.55);
-  margin-bottom: 28px; line-height: 1.5;
-}
-.celebration-shimmer-text {
-  background: linear-gradient(90deg, #2AC769, #30D158, #7B61FF, #0A7AFF, #2AC769);
-  background-size: 200% auto;
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: celebShimmer 2s linear infinite;
-}
-.celebration-btn {
-  background: linear-gradient(135deg, #2AC769, #30D158);
-  border: none; border-radius: 14px;
-  padding: 13px 32px; font-size: 14px; font-weight: 700;
-  color: white; cursor: pointer;
-  box-shadow: 0 4px 20px rgba(42,199,105,0.45);
-  transition: transform 0.15s, box-shadow 0.15s;
-  font-family: 'DM Sans', sans-serif;
-}
-.celebration-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(42,199,105,0.55); }
-.confetti-piece {
-  position: absolute; width: 8px; height: 8px; border-radius: 2px;
-  animation: confettiDrop linear forwards;
-  top: -10px;
-}
-/* progress bar complete state */
-.progress-fill.complete {
-  background: linear-gradient(90deg, #2AC769, #30D158, #7B61FF) !important;
-  background-size: 200% 100% !important;
-  animation: celebShimmer 1.5s linear infinite !important;
-}
 
 
 
@@ -1567,12 +1464,12 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
     <div class="proj-dropdown" id="projDropdown"></div>
 
     <!-- RENAME PROJECT MODAL -->
-    <div id="renameProjBackdrop" style="display:none;position:fixed;inset:0;z-index:998;background:rgba(0,0,0,0.5);backdrop-filter:blur(6px);" onclick="closeRenameModal()"></div>
-    <div id="renameProjPopover" style="display:none;position:fixed;z-index:999;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--surface);border:1px solid var(--border2);border-radius:18px;padding:20px;box-shadow:0 16px 48px rgba(0,0,0,0.6);backdrop-filter:blur(20px);min-width:280px;max-width:340px;width:90%;">
-      <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;">Rename Project</div>
-      <input id="renameProjInput" placeholder="Project name..." onkeydown="if(event.key==='Enter')confirmRenameProject();if(event.key==='Escape')closeRenameModal();" style="width:100%;box-sizing:border-box;background:var(--surface2);border:1.5px solid var(--accent);border-radius:10px;padding:10px 13px;font-size:14px;color:var(--text);outline:none;font-family:'DM Sans',sans-serif;margin-bottom:12px;">
+    <div id="renameProjBackdrop" style="display:none;position:fixed;inset:0;z-index:998;background:rgba(0,0,0,0.6);" onclick="closeRenameModal()"></div>
+    <div id="renameProjPopover" style="display:none;position:fixed;z-index:999;left:50%;top:50%;transform:translate(-50%,-50%);background:#1a1d26;border:1px solid rgba(255,255,255,0.12);border-radius:18px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,0.8);min-width:280px;max-width:340px;width:90%;">
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;">Rename Project</div>
+      <input id="renameProjInput" placeholder="Project name..." onkeydown="if(event.key==='Enter')confirmRenameProject();if(event.key==='Escape')closeRenameModal();" style="width:100%;box-sizing:border-box;background:#0d1117;border:1.5px solid var(--accent);border-radius:10px;padding:10px 13px;font-size:14px;color:#f0f0fa;outline:none;font-family:'DM Sans',sans-serif;margin-bottom:12px;">
       <div style="display:flex;gap:8px;">
-        <button onclick="closeRenameModal()" style="flex:1;padding:9px;border-radius:10px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all var(--transition);">Cancel</button>
+        <button onclick="closeRenameModal()" style="flex:1;padding:9px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:#252830;color:rgba(255,255,255,0.6);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancel</button>
         <button onclick="confirmRenameProject()" style="flex:1;padding:9px;border-radius:10px;border:none;background:var(--accent);color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 3px 12px rgba(10,122,255,0.4);transition:all var(--transition);">Rename</button>
       </div>
     </div>
@@ -1613,13 +1510,8 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 
     <!-- SEARCH BAR -->
     <div class="search-bar-wrap" id="searchBarWrap" style="display:none">
-      <span class="search-bar-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg></span>
       <input class="search-bar-input" id="searchInput" type="text" placeholder="Search items..." oninput="onSearchInput(this.value)">
-      <button class="search-bar-clear" id="searchClear" onclick="clearSearch()">✕</button>
     </div>
-
-    <!-- CELEBRATION OVERLAY -->
-    <div id="celebrationOverlay" class="celebration-overlay" style="display:none"></div>
 
     <!-- ADD FORM -->
     <div class="add-form">
@@ -3161,9 +3053,6 @@ function renderItems() {
     const pct = Math.round(done/total*100);
     fill.style.width = pct + '%';
     val.textContent = done+'/'+total;
-    // shimmer when complete
-    if(done===total) { fill.classList.add('complete'); }
-    else { fill.classList.remove('complete'); }
     // show search bar when there are items
     document.getElementById('searchBarWrap').style.display = 'block';
   } else {
@@ -3253,11 +3142,6 @@ function toggleDone(id) {
     it.done=!it.done;
     saveItems(CP,items);
     renderItems();
-    // check if all done after toggling on
-    if(it.done) {
-      const total=items.length, done=items.filter(i=>i.done).length;
-      if(total>0 && done===total) showCelebration();
-    }
   }
 }
 
@@ -3782,38 +3666,6 @@ function clearSearch() {
   document.getElementById('searchInput').focus();
 }
 
-/* ===== CELEBRATION ===== */
-function showCelebration() {
-  const overlay = document.getElementById('celebrationOverlay');
-  const proj = getProjects().find(p=>p.id===CP);
-  const name = proj ? proj.name : 'this project';
-  const colors = ['#2AC769','#30D158','#0A7AFF','#7B61FF','#FF9500','#FF3A30','#FFD60A'];
-  // confetti pieces
-  let confettiHtml = '';
-  for(let i=0;i<22;i++){
-    const c = colors[i%colors.length];
-    const left = Math.random()*100;
-    const delay = Math.random()*0.8;
-    const dur = 1.2 + Math.random()*0.8;
-    const rot = Math.random()*360;
-    confettiHtml += `<div class="confetti-piece" style="left:${left}%;background:${c};animation-duration:${dur}s;animation-delay:${delay}s;transform:rotate(${rot}deg)"></div>`;
-  }
-  overlay.innerHTML = `
-    <div class="celebration-card">
-      ${confettiHtml}
-      <span class="celebration-icon">🎉</span>
-      <div class="celebration-title"><span class="celebration-shimmer-text">All Done!</span></div>
-      <div class="celebration-subtitle">You collected everything in<br><strong style="color:white">${esc(name)}</strong></div>
-      <button class="celebration-btn" onclick="closeCelebration()">Back to list</button>
-    </div>`;
-  overlay.style.display = 'flex';
-  overlay.classList.remove('hiding');
-}
-function closeCelebration() {
-  const overlay = document.getElementById('celebrationOverlay');
-  overlay.classList.add('hiding');
-  setTimeout(()=>{ overlay.style.display='none'; overlay.classList.remove('hiding'); }, 400);
-}
 
 
 </script>
