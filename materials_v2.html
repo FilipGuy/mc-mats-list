@@ -22,8 +22,8 @@ try {
   if (!localStorage.getItem('ml_bg_image')) {
     const idx = parseInt(localStorage.getItem('ml_bg_preset') || '0');
     const bg = BG[idx] || BG[0];
-    // Use a style tag so it applies before body exists
-    document.write('<style>body{background:' + bg + ' !important}</style>');
+    // Write a named style tag — applyBg() will remove it on first run
+    document.write('<style id="earlyBg">body{background:' + bg + '}</style>');
   }
 } catch(e) {}
 </script>
@@ -3251,6 +3251,10 @@ function applyPreset(i) {
 }
 
 function applyBg() {
+  // Remove the early-paint style tag so it never blocks runtime theme changes
+  const earlyBg = document.getElementById('earlyBg');
+  if (earlyBg) earlyBg.remove();
+
   const presetIdx = LS.get('ml_bg_preset') ?? 0; // default to Midnight
   const imgData   = LS.get('ml_bg_image');
   const blur      = LS.get('ml_bg_blur') ?? 0;
